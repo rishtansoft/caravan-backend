@@ -68,6 +68,11 @@ class Validate {
             return false;
         }
     }
+    validatePhoneNumber(phone) {
+        // "+998123456789" format 
+        const phoneRegex = /^\+998\d{9}$/;
+        return phoneRegex.test(phone);
+    }
 
 }
 
