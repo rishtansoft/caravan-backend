@@ -210,6 +210,8 @@ class UserControllers {
 
     //-------------------------------------------------------------------
 
+
+
     /*
         async user2Add(req, res, next) {
             try {
@@ -629,14 +631,18 @@ class UserControllers {
     async userPasswordChangSendCode(req, res, next) {
         try {
             const { phone } = req.body;
-            if (!phone) {
+            if (!phone || !validate.validatePhoneNumber(phone)) {
                 return next(
                     ApiError.badRequest('phone was not entered')
                 )
             }
+
             const user = await Users.findOne({
                 where: {
-                    status: 'active',
+                    [Op.or]: [
+                        { status: 'active' },
+                        { status: 'pending' },
+                    ],
                     phone: phone
                 }
             });
@@ -696,10 +702,19 @@ class UserControllers {
 
             const user = await Users.findOne({
                 where: {
-                    // status: 'pending',
+                    [Op.or]: [
+                        { status: 'active' },
+                        { status: 'pending' },
+                    ],
                     id: userReg.user_id
                 }
             });
+
+            if (!user) {
+                return next(
+                    ApiError.badRequest("User not found")
+                )
+            }
 
 
             userReg.status = 'inactive';
@@ -707,13 +722,72 @@ class UserControllers {
 
 
 
-            const resData = {
+            const resData = user.status == "pending" ? {
                 id: user.id,
                 role: user.role,
                 user_pasword_update: true,
-            };
+                // user_reg: false
+            } : {
+                id: user.id,
+                role: user.role,
+                user_pasword_update: true,
+                // user_reg: true
+            }
 
             return res.json(resData);
+
+        } catch (error) {
+            console.log(error.stack);
+            return next(
+                ApiError.badRequest(error)
+            )
+        }
+    }
+
+    async userPasswordChang(req, res, next) {
+        try {
+            const { password,
+                password_rep,
+                id
+            } = req.body;
+
+            if (!id || !validate.isValidUUID(id)) {
+                return next(
+                    ApiError.badRequest("The id value was entered incorrectly")
+                )
+            }
+            const user = await Users.findOne({
+                where: {
+                    [Op.or]: [
+                        { status: 'active' },
+                        { status: 'pending' },
+                    ],
+                    id: id
+                }
+            });
+
+            if (!user) {
+                return next(
+                    ApiError.badRequest("user not found")
+                )
+            }
+
+
+            if ((!password || !password_rep) || (password != password_rep)) {
+                return next(
+                    ApiError.badRequest('The password value was entered incorrectly. Please check and login again')
+                )
+            }
+
+            const hashPassword = await bcrypt.hash(password, 5);
+
+            user.password == hashPassword;
+            await user.save();
+
+            return res.json({
+                message: 'password update is done',
+                in_update: true
+            })
 
         } catch (error) {
             console.log(error.stack);
