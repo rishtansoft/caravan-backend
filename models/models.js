@@ -2,6 +2,7 @@ const sequelize = require("../db");
 
 const { DataTypes, Model } = require("sequelize");
 const { Sequelize } = require("../db");
+
 const Users = sequelize.define("users", {
     id: {
         type: Sequelize.UUID,
@@ -21,8 +22,8 @@ const Users = sequelize.define("users", {
         allowNull: true
     },
     address: { type: DataTypes.STRING },
-    role: { type: Sequelize.ENUM('driver', 'cargo_owner'), allowNull: false },
-    status: { type: Sequelize.ENUM('pending', 'active', 'inactive', 'confirm_phone'), defaultValue: "confirm_phone" },
+    role: { type: DataTypes.STRING, allowNull: false }, // 'driver', 'cargo_owner'
+    status: { type: DataTypes.STRING, defaultValue: "confirm_phone" }, // 'pending', 'active', 'inactive', 'confirm_phone'
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -53,7 +54,7 @@ const Driver = sequelize.define('drivers', {
         type: DataTypes.BLOB('long'),
         allowNull: true
     },
-    dr_status: { type: Sequelize.ENUM('empty', 'at_work', 'resting', 'offline', 'on_break'), },
+    dr_status: { type: DataTypes.STRING },  // 'empty', 'at_work', 'resting', 'offline', 'on_break'
     status: { type: DataTypes.STRING, defaultValue: "active" },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
@@ -65,6 +66,7 @@ const Load = sequelize.define("loads", {
         allowNull: false,
         primaryKey: true,
     },
+    car_type: { type: Sequelize.STRING, },
     user_id: { type: DataTypes.STRING },
     name: { type: DataTypes.STRING },
     cargo_type: { type: DataTypes.STRING },
@@ -77,7 +79,7 @@ const Load = sequelize.define("loads", {
     width: { type: DataTypes.STRING },
     height: { type: DataTypes.STRING },
     status: { type: DataTypes.STRING, defaultValue: "active" },
-    load_status: { type: Sequelize.ENUM('posted', 'assigned', 'picked_up', 'in_transit', 'delivered'), defaultValue: 'posted' },
+    load_status: { type: DataTypes.STRING, defaultValue: 'posted' }, // 'posted', 'assigned', 'picked_up', 'in_transit', 'delivered'
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -90,15 +92,15 @@ const Assignment = sequelize.define('assignments', {
     },
     load_id: { type: DataTypes.STRING },
     driver_id: { type: DataTypes.STRING },
-    assignment_status: { type: Sequelize.ENUM('assigned', 'picked_up', 'in_transit', 'delivered'), defaultValue: 'assigned' },
+    assignment_status: { type: DataTypes.STRING, defaultValue: 'assigned' }, // 'assigned', 'picked_up', 'in_transit', 'delivered'
     status: { type: DataTypes.STRING, defaultValue: "active" },
     pickUpTime: { type: DataTypes.STRING },
     deliveryTime: { type: DataTypes.STRING },
     location_id: { type: DataTypes.TEXT },
+    load_location_stop_id: { type: DataTypes.TEXT },
     driver_stop_id: { type: DataTypes.TEXT },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
-
 });
 const Location = sequelize.define('locations', {
     id: {
@@ -113,7 +115,22 @@ const Location = sequelize.define('locations', {
     end_latitude: { type: DataTypes.STRING, allowNull: false },
     end_longitude: { type: DataTypes.STRING, allowNull: false },
     status: { type: DataTypes.STRING, defaultValue: "active" },
-    order: { type: DataTypes.FLOAT, defaultValue: 1 },
+    order: { type: DataTypes.NUMBER, defaultValue: 1 },
+    updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
+    createdAt: { type: DataTypes.DATE, field: 'created_at' },
+});
+const LoadLocationStop = sequelize.define('load_location_stops', {
+    id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        allowNull: false,
+        primaryKey: true,
+    },
+    assignment_id: { type: DataTypes.STRING, },
+    latitude: { type: DataTypes.STRING, allowNull: false },
+    longitude: { type: DataTypes.STRING, allowNull: false },
+    status: { type: DataTypes.STRING, defaultValue: "active" },
+    order: { type: DataTypes.NUMBER, defaultValue: 1 },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -130,7 +147,7 @@ const DriverStop = sequelize.define('driver_stops', {
     start_time: { type: DataTypes.STRING, allowNull: false },
     end_time: { type: DataTypes.STRING, allowNull: false },
     status: { type: DataTypes.STRING, defaultValue: "active" },
-    order: { type: DataTypes.FLOAT, defaultValue: 1 },
+    order: { type: DataTypes.NUMBER, defaultValue: 1 },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -146,7 +163,7 @@ const LocationCron = sequelize.define('location_crons', {
     latitude: { type: DataTypes.STRING, allowNull: false },
     longitude: { type: DataTypes.STRING, allowNull: false },
     status: { type: DataTypes.STRING, defaultValue: "active" },
-    order: { type: DataTypes.FLOAT, defaultValue: 1 },
+    order: { type: DataTypes.NUMBER, defaultValue: 1 },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -161,7 +178,7 @@ const Notification = sequelize.define('notifications', {
     user_id: { type: DataTypes.STRING },
     message: { type: DataTypes.TEXT, },
     status: { type: DataTypes.STRING, defaultValue: "active" },
-    order: { type: DataTypes.FLOAT, defaultValue: 1 },
+    order: { type: DataTypes.NUMBER, defaultValue: 1 },
     updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
     createdAt: { type: DataTypes.DATE, field: 'created_at' },
 });
@@ -191,7 +208,8 @@ module.exports = {
     Notification,
     DriverStop,
     UserRegister,
-    LocationCron
+    LocationCron,
+    LoadLocationStop
 };
 
 
