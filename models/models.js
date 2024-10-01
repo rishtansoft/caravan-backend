@@ -120,6 +120,9 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false, // Haydovchi bloklangan yoki yo'q
     },
+  }, {
+    sequelize,
+    tableName: 'Driver', // jadval nomini majburlash
   });
 
   // Load modeli
@@ -149,7 +152,12 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('posted', 'assigned', 'picked_up', 'in_transit', 'delivered'),
       defaultValue: 'posted'
     },
-  });
+  }, 
+    {
+      sequelize,
+      tableName: 'Load', // jadval nomini majburlash
+    }
+  );
 
   // Assignment modeli
   class Assignment extends BaseModel {
@@ -182,6 +190,9 @@ module.exports = (sequelize) => {
     },
     pickUpTime: DataTypes.DATE,
     deliveryTime: DataTypes.DATE,
+  }, {
+    sequelize,
+    tableName: 'Assignment', // jadval nomini majburlash
   });
 
   // Location modeli

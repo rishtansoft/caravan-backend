@@ -27,7 +27,6 @@ app.get('/', async (req, res) => {
     res.json('hello')
 })
 
-
 const server = http.createServer(app)
 
 module.exports = server;
