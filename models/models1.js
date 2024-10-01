@@ -31,6 +31,29 @@ module.exports = (sequelize) => {
       Users.hasMany(models.Load);
       Users.hasMany(models.Notification);
     }
+
+    static hooks = {
+      // Foydalanuvchi yaratilgandan keyin driver va load yozuvlarini yaratish
+      afterCreate: async (user, options) => {
+        const { Driver, Load } = sequelize.models;
+
+        if (user.role === 'driver') {
+          // Foydalanuvchi driver bo'lsa, driver yaratish
+          await Driver.create({
+            user_id: user.id,
+            name: `${user.firstname} ${user.lastname}`,
+          });
+        }
+
+        if (user.role === 'cargo_owner') {
+          // Foydalanuvchi cargo_owner bo'lsa, load yaratish
+          await Load.create({
+            user_id: user.id,
+            name: 'Yangi yuk',
+          });
+        }
+      },
+    };
   }
 
   Users.init({
@@ -151,181 +174,10 @@ module.exports = (sequelize) => {
     },
   });
 
-  // Assignment modeli
-  class Assignment extends BaseModel {
-    static associate(models) {
-      Assignment.belongsTo(models.Driver);
-      Assignment.belongsTo(models.Load);
-      Assignment.hasMany(models.Location);
-      Assignment.hasMany(models.DriverStop);
-    }
-  }
-
-  Assignment.init({
-    load_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Load',
-        key: 'id'
-      }
-    },
-    driver_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Driver',
-        key: 'id'
-      }
-    },
-    assignment_status: {
-      type: DataTypes.ENUM('assigned', 'picked_up', 'in_transit', 'delivered'),
-      defaultValue: 'assigned'
-    },
-    pickUpTime: DataTypes.DATE,
-    deliveryTime: DataTypes.DATE,
-  });
-
-  // Location modeli
-  class Location extends BaseModel {
-    static associate(models) {
-      Location.belongsTo(models.Assignment);
-    }
-  }
-
-  Location.init({
-    assignment_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Assignment',
-        key: 'id'
-      }
-    },
-    start_latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    start_longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    end_latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    end_longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1
-    },
-  });
-
-  // DriverStop modeli
-  class DriverStop extends BaseModel {
-    static associate(models) {
-      DriverStop.belongsTo(models.Assignment);
-    }
-  }
-
-  DriverStop.init({
-    assignment_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Assignment',
-        key: 'id'
-      }
-    },
-    latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    start_time: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    end_time: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1
-    },
-  });
-
-  // LocationCron modeli
-  class LocationCron extends BaseModel {
-    static associate(models) {
-      LocationCron.belongsTo(models.Assignment);
-    }
-  }
-
-  LocationCron.init({
-    assignment_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Assignment',
-        key: 'id'
-      }
-    },
-    time: DataTypes.DATE,
-    latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1
-    },
-  });
-
-  // Notification modeli
-  class Notification extends BaseModel {
-    static associate(models) {
-      Notification.belongsTo(models.Users);
-      Notification.belongsTo(models.Load);
-    }
-  }
-
-  Notification.init({
-    load_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Load',
-        key: 'id'
-      }
-    },
-    user_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Users',
-        key: 'id'
-      }
-    },
-    message: DataTypes.TEXT,
-    order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1
-    },
-  });
-
+  // Modelni qaytarish
   return {
     Users,
     Driver,
     Load,
-    Assignment,
-    Location,
-    DriverStop,
-    LocationCron,
-    Notification
   };
 };
