@@ -1,7 +1,8 @@
-const { Users, UserRegister, Driver } = require("../../models/models");
+const { Users, UserRegister, Driver } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const jwt = require("jsonwebtoken");
-const userToken = require("./usetToken");
+// const userToken = require("./usetToken");
+const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 const validate = require("./validateFun");
 const helperFunctions = require("./helperFunctions");
@@ -14,54 +15,84 @@ const generateJwt = ({ id, role, phone }) => {
 class UserControllers {
   async userAdd(req, res, next) {
     try {
-      const { lastname, firstname, phone } = req.body;
-      console.log(req.body);
+      const { lastname, firstname, phone, password, password_rep, role } =
+        req.body;
 
+      // Validate inputs
       if (!lastname) {
-        return next(ApiError.badRequest("lastname was not entered"));
+        return next(ApiError.badRequest("Lastname was not entered"));
       }
       if (!firstname) {
-        return next(ApiError.badRequest("firstname was not entered"));
+        return next(ApiError.badRequest("Firstname was not entered"));
       }
-      if (!phone) {
-        return next(ApiError.badRequest("phone was not entered"));
-      } else {
-        const user_driver = await Users.findOne({
-          where: {
-            phone: phone,
-            [Op.or]: [{ status: "active" }, { status: "pending" }],
-          },
-        });
-        if (user_driver) {
-          return next(
-            ApiError.badRequest("This phone number is already registered")
-          );
-        }
+      if (!role) {
+        return next(ApiError.badRequest("role was not entered"));
+      }
+      if (!phone || !validate.validatePhoneNumber(phone)) {
+        return next(
+          ApiError.badRequest("Phone was not entered or not formatted")
+        );
+      }
+      if (!password || !password_rep || password !== password_rep) {
+        return next(
+          ApiError.badRequest("Passwords do not match or are not provided")
+        );
+      }
+      console.log(Users);
+
+      const existingUser = await Users.findOne({
+        where: {
+          phone: phone,
+          [Op.or]: [{ user_status: "active" }, { user_status: "pending" }],
+        },
+      });
+
+      if (existingUser) {
+        return next(
+          ApiError.badRequest("This phone number is already registered")
+        );
       }
 
+      // Hash the password
+      const hashPassword = await bcrypt.hash(password, 5);
+
       const smsCode = helperFunctions.generateRandomCode();
-      const user_driver = await Users.create({
+      console.log(smsCode);
+
+      // Create a new user
+      const newUser = await Users.create({
         lastname: lastname,
         firstname: firstname,
         phone: phone,
-        role: "driver",
+        password: hashPassword,
+        role: role,
+        user_status: "confirm_phone",
       });
 
+      console.log("newww::::::::  ", newUser);
+
+      // Save the verification code for the user
       const userReg = await UserRegister.create({
         code: smsCode,
-        user_id: user_driver.id,
+        user_id: newUser.id,
       });
 
+      // Return success response
       return res.json({
         code: smsCode,
         id: userReg.id,
         phone: phone,
+        ur_id: newUser.id,
       });
     } catch (error) {
       console.log(error.stack);
-      return next(ApiError.badRequest("User driver add error"));
+      return next(
+        ApiError.badRequest("User driver adding error: " + error.message)
+      );
     }
   }
+
+  // user qo'shsih
 
   async user2Add(req, res, next) {
     try {

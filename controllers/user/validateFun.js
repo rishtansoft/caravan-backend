@@ -73,6 +73,10 @@ class Validate {
       return false;
     }
   }
+  validatePhoneNumber(phone) {
+    const phoneRegex = /^\+998\d{9}$/;
+    return phoneRegex.test(phone);
+  }
 }
 
 module.exports = new Validate();

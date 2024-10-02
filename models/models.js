@@ -53,22 +53,22 @@ module.exports = (sequelize) => {
       firstname: DataTypes.STRING,
       phone: {
         type: DataTypes.STRING,
-        unique: true, // Telefon raqam bir martalik bo'lishi kerak
+        unique: true,
         validate: {
-          is: /^\+?[1-9]\d{1,14}$/,
+          is: /^\+?[1-9]\d{1,14}$/, // Phone validation
         },
       },
       phone_2: {
         type: DataTypes.STRING,
         validate: {
-          is: /^\+?[1-9]\d{1,14}$/,
+          is: /^\+?[1-9]\d{1,14}$/, // Phone validation
         },
       },
       birthday: DataTypes.DATEONLY,
-      user_img: DataTypes.STRING, // fayl yo'li
+      user_img: DataTypes.STRING,
       address: DataTypes.STRING,
       role: {
-        type: DataTypes.ENUM("driver", "cargo_owner", "admin"), // Admin ham rolega qo'shildi
+        type: DataTypes.ENUM("driver", "cargo_owner", "admin"),
         allowNull: false,
       },
       user_status: {
@@ -79,14 +79,13 @@ module.exports = (sequelize) => {
       verification_expiry: DataTypes.DATE,
       email: {
         type: DataTypes.STRING,
-        allowNull: true,
         unique: true,
         validate: {
           isEmail: true,
         },
       },
     },
-    { sequelize }
+    { sequelize, modelName: "Users" }
   );
 
   // Driver modeli
@@ -359,10 +358,57 @@ module.exports = (sequelize) => {
     },
   });
 
+  class UserRegister extends BaseModel {
+    static associate(models) {
+      UserRegister.belongsTo(models.Users, { foreignKey: "user_id" });
+    }
+  }
+
+  UserRegister.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        allowNull: false,
+        primaryKey: true,
+      },
+      code: {
+        type: DataTypes.STRING,
+      },
+      user_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Users",
+          key: "id",
+        },
+      },
+      time: {
+        type: DataTypes.STRING,
+      },
+      status: {
+        type: DataTypes.ENUM("active", "inactive"),
+        defaultValue: "active",
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        field: "updated_at",
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        field: "created_at",
+      },
+    },
+    {
+      sequelize,
+      tableName: "user_registers",
+    }
+  );
+
   Users.associate = (models) => {
     Users.hasOne(models.Driver);
     Users.hasMany(models.Load);
     Users.hasMany(models.Notification);
+    Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
   };
 
   Driver.associate = (models) => {
@@ -384,5 +430,6 @@ module.exports = (sequelize) => {
     DriverStop,
     LocationCron,
     Notification,
+    UserRegister,
   };
 };
