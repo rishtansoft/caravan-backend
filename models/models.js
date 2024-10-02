@@ -27,12 +27,12 @@ module.exports = (sequelize) => {
     }
   }
 
-  // Users modeli
   class Users extends BaseModel {
     static associate(models) {
       Users.hasOne(models.Driver);
       Users.hasMany(models.Load);
       Users.hasMany(models.Notification);
+      Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
     }
   }
 
@@ -41,27 +41,32 @@ module.exports = (sequelize) => {
       password: {
         type: DataTypes.STRING,
         allowNull: false,
-        set(value) {
-          this.setDataValue("password", bcrypt.hashSync(value, 10));
-        },
       },
       userid: {
         type: DataTypes.STRING,
         unique: true,
       },
-      lastname: DataTypes.STRING,
-      firstname: DataTypes.STRING,
+      lastname: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      firstname: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       phone: {
         type: DataTypes.STRING,
         unique: true,
+        allowNull: false,
         validate: {
-          is: /^\+?[1-9]\d{1,14}$/, // Phone validation
+          is: /^\+?[1-9]\d{1,14}$/,
         },
       },
       phone_2: {
         type: DataTypes.STRING,
+        allowNull: true,
         validate: {
-          is: /^\+?[1-9]\d{1,14}$/, // Phone validation
+          is: /^\+?[1-9]\d{1,14}$/,
         },
       },
       birthday: DataTypes.DATEONLY,
@@ -85,7 +90,17 @@ module.exports = (sequelize) => {
         },
       },
     },
-    { sequelize, modelName: "Users" }
+    {
+      sequelize,
+      modelName: "Users",
+      hooks: {
+        beforeCreate: async (user) => {
+          if (user.password) {
+            user.password = await bcrypt.hash(user.password, 10);
+          }
+        },
+      },
+    }
   );
 
   // Driver modeli

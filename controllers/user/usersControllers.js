@@ -15,8 +15,15 @@ const generateJwt = ({ id, role, phone }) => {
 class UserControllers {
   async userAdd(req, res, next) {
     try {
-      const { lastname, firstname, phone, password, password_rep, role } =
-        req.body;
+      const {
+        lastname,
+        firstname,
+        phone,
+        phone_2,
+        password,
+        password_rep,
+        role,
+      } = req.body;
 
       // Validate inputs
       if (!lastname) {
@@ -28,17 +35,18 @@ class UserControllers {
       if (!role) {
         return next(ApiError.badRequest("role was not entered"));
       }
-      if (!phone || !validate.validatePhoneNumber(phone)) {
-        return next(
-          ApiError.badRequest("Phone was not entered or not formatted")
-        );
-      }
+
       if (!password || !password_rep || password !== password_rep) {
         return next(
           ApiError.badRequest("Passwords do not match or are not provided")
         );
       }
-      console.log(Users);
+
+      if (!validate.validatePhoneNumber(phone)) {
+        return next(
+          ApiError.badRequest("Phone number is not formatted correctly")
+        );
+      }
 
       const existingUser = await Users.findOne({
         where: {
@@ -53,23 +61,21 @@ class UserControllers {
         );
       }
 
-      // Hash the password
-      const hashPassword = await bcrypt.hash(password, 5);
-
       const smsCode = helperFunctions.generateRandomCode();
-      console.log(smsCode);
 
       // Create a new user
       const newUser = await Users.create({
-        lastname: lastname,
-        firstname: firstname,
-        phone: phone,
-        password: hashPassword,
-        role: role,
+        lastname,
+        firstname,
+        phone,
+        phone_2,
+        password,
+        verification_code: smsCode,
+        role,
         user_status: "confirm_phone",
       });
 
-      console.log("newww::::::::  ", newUser);
+      console.log(newUser);
 
       // Save the verification code for the user
       const userReg = await UserRegister.create({
