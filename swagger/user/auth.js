@@ -119,3 +119,152 @@
  *       '400':
  *         description: Bad request or validation error
  */
+
+/**
+ * @swagger
+ * /api/auth/password-reset/send-code:
+ *   post:
+ *     summary: Request an SMS code for password reset
+ *     description: User provides their phone number to request an SMS code for resetting their password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: User's registered phone number
+ *                 example: "+1234567890"
+ *     responses:
+ *       '200':
+ *         description: SMS code sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                 id:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *                   example: "SMS code sent successfully."
+ *       '400':
+ *         description: Bad request or validation error
+ */
+
+/**
+ * @swagger
+ * /api/auth/password-reset/verify-code:
+ *   post:
+ *     summary: Verify the SMS code for password reset
+ *     description: Verify the SMS code sent to the user's phone number for password reset.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: The ID returned when the SMS code was requested
+ *               code:
+ *                 type: string
+ *                 description: The SMS code sent to the user's phone
+ *                 example: "123456"
+ *     responses:
+ *       '200':
+ *         description: SMS code verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 user_id:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *                   example: "SMS code verified successfully."
+ *       '400':
+ *         description: Invalid SMS code or other validation errors
+ */
+
+/**
+ * @swagger
+ * /api/auth/password-reset/new-password:
+ *   post:
+ *     summary: Reset the user's password
+ *     description: Allows the user to reset their password after verifying the SMS code.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: User's ID after verifying SMS code
+ *               new_password:
+ *                 type: string
+ *                 description: The new password for the user
+ *                 example: "newPassword123"
+ *               password_rep:
+ *                 type: string
+ *                 description: Repeat the new password for confirmation
+ *                 example: "newPassword123"
+ *     responses:
+ *       '200':
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password reset successfully."
+ *       '400':
+ *         description: Validation error or mismatch in passwords
+ */
+
+/**
+ * @swagger
+ * /api/auth/password-reset/resend-code:
+ *   post:
+ *     summary: Resend the SMS code for password reset
+ *     description: Allows the user to request another SMS code if they didn't receive the first one.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: The ID returned when the SMS code was requested
+ *               phone:
+ *                 type: string
+ *                 description: The phone number for which the SMS code should be resent
+ *                 example: "+1234567890"
+ *     responses:
+ *       '200':
+ *         description: SMS code resent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "SMS code resent successfully."
+ *       '400':
+ *         description: Bad request or validation error
+ */

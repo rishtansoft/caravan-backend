@@ -116,8 +116,14 @@ module.exports = (sequelize) => {
 
   Driver.init(
     {
-      car_type: DataTypes.STRING,
-      name: DataTypes.STRING,
+      car_type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       user_id: {
         type: DataTypes.UUID,
         references: {
@@ -126,13 +132,25 @@ module.exports = (sequelize) => {
         },
         allowNull: false,
       },
-      tex_pas_ser: DataTypes.STRING,
-      prava_ser: DataTypes.STRING,
-      tex_pas_num: DataTypes.STRING,
-      prava_num: DataTypes.STRING,
-      car_img: DataTypes.STRING, // fayl yo'li
-      prava_img: DataTypes.STRING, // fayl yo'li
-      tex_pas_img: DataTypes.STRING, // fayl yo'li
+      tex_pas_ser: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      prava_ser: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      tex_pas_num: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      prava_num: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      car_img: DataTypes.STRING,
+      prava_img: DataTypes.STRING,
+      tex_pas_img: DataTypes.STRING,
       driver_status: {
         type: DataTypes.ENUM(
           "empty",

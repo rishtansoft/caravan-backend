@@ -41,6 +41,24 @@ router.post("/load-add", upload, (req, res, next) => {
   driverControllers.user2Add(req, res, next);
 });
 
+// Password Reset Routes
+router.post(
+  "/auth/password-reset/send-code",
+  driverControllers.userPasswordChangSendCode
+);
+router.post(
+  "/auth/password-reset/verify-code",
+  driverControllers.userPasswordChangCode
+);
+router.post(
+  "/auth/password-reset/new-password",
+  driverControllers.userPasswordReset
+);
+router.post(
+  "/auth/password-reset/resend-code",
+  driverControllers.smsCodeResend
+);
+
 // Admin login route'i
 router.post("/login", loginAdminValidation, usersControllers.userLogin);
 

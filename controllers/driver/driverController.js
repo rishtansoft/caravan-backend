@@ -1,7 +1,6 @@
-const { Driver } = require("../../models/index");
+const { Users, Driver, UserRegister } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const jwt = require("jsonwebtoken");
-// const userToken = require("./usetToken");
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 const validate = require("../user/validateFun");
@@ -71,7 +70,7 @@ class DriverControllers {
     } catch (error) {
       console.log(error.stack);
       return next(
-        ApiError.badRequest("User driver add error:  " + error.message)
+        ApiError.badRequest("User during driver add error:  " + error.message)
       );
     }
   }
@@ -282,6 +281,7 @@ class DriverControllers {
     }
   }
 
+  // code un tel
   async userPasswordChangSendCode(req, res, next) {
     try {
       const { phone } = req.body;
@@ -299,14 +299,17 @@ class DriverControllers {
         return next(ApiError.badRequest("User not found"));
       }
       const smsCode = helperFunctions.generateRandomCode();
+      console.log(smsCode);
       const userReg = await UserRegister.create({
         code: smsCode,
         user_id: user.id,
       });
+      console.log(userReg);
 
       return res.json({
         code: smsCode,
         id: userReg.id,
+        message: "SMS code has been sent.",
       });
     } catch (error) {
       console.log(error.stack);
@@ -314,8 +317,11 @@ class DriverControllers {
     }
   }
 
+  // coddeni tekwiriw
   async userPasswordChangCode(req, res, next) {
     try {
+      console.log(req);
+
       const { id, code } = req.body;
       if (!id || !validate.isValidUUID(id)) {
         return next(
@@ -344,7 +350,6 @@ class DriverControllers {
 
       const user = await Users.findOne({
         where: {
-          // status: 'pending',
           id: userReg.user_id,
         },
       });
@@ -354,7 +359,7 @@ class DriverControllers {
 
       const resData = {
         id: user.id,
-        role: user.role,
+        message: "SMS verified. You can now reset your password.",
         user_pasword_update: true,
       };
 
@@ -362,6 +367,68 @@ class DriverControllers {
     } catch (error) {
       console.log(error.stack);
       return next(ApiError.badRequest(error));
+    }
+  }
+
+  // yangi parol qo'yiw
+  async userPasswordReset(req, res, next) {
+    try {
+      const { id, newPassword, newPasswordRepeat } = req.body;
+      if (!newPassword || newPassword !== newPasswordRepeat) {
+        return next(ApiError.badRequest("Passwords do not match"));
+      }
+
+      const user = await Users.findOne({
+        where: { id: id },
+      });
+
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      user.password = hashedPassword;
+      await user.save();
+
+      return res.json({
+        message: "Password reset successful",
+        id: user.id,
+      });
+    } catch (error) {
+      console.log(error.stack);
+      return next(ApiError.badRequest("Error resetting password"));
+    }
+  }
+
+  // yangi sms code oliw
+  async smsCodeResend(req, res, next) {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        return next(ApiError.badRequest("Phone was not entered"));
+      }
+
+      const user = await Users.findOne({
+        where: { status: "active", phone: phone },
+      });
+
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+
+      const smsCode = helperFunctions.generateRandomCode();
+      const userReg = await UserRegister.create({
+        code: smsCode,
+        user_id: user.id,
+      });
+
+      return res.json({
+        code: smsCode,
+        message: "New SMS code has been sent.",
+      });
+    } catch (error) {
+      console.log(error.stack);
+      return next(ApiError.badRequest("Error resending SMS code"));
     }
   }
 }
