@@ -29,9 +29,9 @@ module.exports = (sequelize) => {
 
   class Users extends BaseModel {
     static associate(models) {
-      Users.hasOne(models.Driver);
-      Users.hasMany(models.Load);
-      Users.hasMany(models.Notification);
+      Users.hasOne(models.Driver, { foreignKey: "user_id" });
+      Users.hasMany(models.Load, { foreignKey: "user_id" });
+      Users.hasMany(models.Notification, { foreignKey: "user_id" });
       Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
     }
   }
@@ -106,8 +106,11 @@ module.exports = (sequelize) => {
   // Driver modeli
   class Driver extends BaseModel {
     static associate(models) {
-      Driver.belongsTo(models.Users);
-      Driver.hasMany(models.Assignment);
+      Driver.belongsTo(models.Users, {
+        foreignKey: "user_id",
+        targetKey: "id",
+      });
+      Driver.hasMany(models.Assignment, { foreignKey: "driver_id" });
     }
   }
 
@@ -121,6 +124,7 @@ module.exports = (sequelize) => {
           model: "Users",
           key: "id",
         },
+        allowNull: false,
       },
       tex_pas_ser: DataTypes.STRING,
       prava_ser: DataTypes.STRING,
@@ -157,8 +161,8 @@ module.exports = (sequelize) => {
   // Load modeli
   class Load extends BaseModel {
     static associate(models) {
-      Load.belongsTo(models.Users);
-      Load.hasOne(models.Assignment);
+      Load.belongsTo(models.Users, { foreignKey: "user_id" });
+      Load.hasOne(models.Assignment, { foreignKey: "load_id" });
     }
   }
 

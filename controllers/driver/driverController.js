@@ -1,99 +1,77 @@
-const { Users, UserRegister, Driver } = require("../../models/index");
+const { Driver } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const jwt = require("jsonwebtoken");
 // const userToken = require("./usetToken");
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
-const validate = require("./validateFun");
-const helperFunctions = require("./helperFunctions");
+const validate = require("../user/validateFun");
+const helperFunctions = require("../user/helperFunctions");
 const generateJwt = ({ id, role, phone }) => {
   return jwt.sign({ id, phone: phone, role: role }, process.env.SECRET_KEY, {
     expiresIn: "1440m",
   });
 };
 
-class UserControllers {
-  async userAdd(req, res, next) {
+class DriverControllers {
+  async user2Add(req, res, next) {
     try {
       const {
-        lastname,
-        firstname,
-        phone,
-        phone_2,
-        password,
-        password_rep,
-        role,
+        car_type,
+        name,
+        user_id,
+        tex_pas_ser,
+        tex_pas_num,
+        prava_ser,
+        prava_num,
       } = req.body;
 
-      // Validate inputs
-      if (!lastname) {
-        return next(ApiError.badRequest("Lastname was not entered"));
-      }
-      if (!firstname) {
-        return next(ApiError.badRequest("Firstname was not entered"));
-      }
-      if (!role) {
-        return next(ApiError.badRequest("role was not entered"));
-      }
+      console.log(req.body);
 
-      if (!password || !password_rep || password !== password_rep) {
-        return next(
-          ApiError.badRequest("Passwords do not match or are not provided")
-        );
-      }
+      const texPas_img =
+        req.files && req.files["tex_pas_img"]
+          ? req.files["tex_pas_img"][0].path
+          : null;
+      const prava_img =
+        req.files && req.files["prava_img"]
+          ? req.files["prava_img"][0].path
+          : null;
+      const car_img =
+        req.files && req.files["car_img"] ? req.files["car_img"][0].path : null;
 
-      if (!validate.validatePhoneNumber(phone)) {
-        return next(
-          ApiError.badRequest("Phone number is not formatted correctly")
-        );
-      }
+      // Validate required fields
+      if (!car_type)
+        return next(ApiError.badRequest("car_type was not entered"));
+      if (!name) return next(ApiError.badRequest("name was not entered"));
+      if (!user_id) return next(ApiError.badRequest("user_id was not entered"));
+      if (!tex_pas_ser)
+        return next(ApiError.badRequest("tex_pas_ser was not entered"));
+      if (!prava_num)
+        return next(ApiError.badRequest("prava_num was not entered"));
+      if (!prava_ser)
+        return next(ApiError.badRequest("prava_ser was not entered"));
 
-      const existingUser = await Users.findOne({
-        where: {
-          phone: phone,
-          [Op.or]: [{ user_status: "active" }, { user_status: "pending" }],
-        },
+      // Create the driver
+      const driver = await Driver.create({
+        car_type,
+        name,
+        user_id,
+        tex_pas_ser,
+        tex_pas_num,
+        prava_ser,
+        prava_num,
+        tex_pas_img: texPas_img,
+        prava_img: prava_img,
+        car_img: car_img,
       });
 
-      if (existingUser) {
-        return next(
-          ApiError.badRequest("This phone number is already registered")
-        );
-      }
-
-      const smsCode = helperFunctions.generateRandomCode();
-
-      // Create a new user
-      const newUser = await Users.create({
-        lastname,
-        firstname,
-        phone,
-        phone_2,
-        password,
-        verification_code: smsCode,
-        role,
-        user_status: "confirm_phone",
-      });
-
-      console.log(newUser);
-
-      // Save the verification code for the user
-      const userReg = await UserRegister.create({
-        code: smsCode,
-        user_id: newUser.id,
-      });
-
-      // Return success response
       return res.json({
-        code: smsCode,
-        id: userReg.id,
-        phone: phone,
-        ur_id: newUser.id,
+        id: driver.id,
+        user_id: driver.user_id,
       });
     } catch (error) {
       console.log(error.stack);
       return next(
-        ApiError.badRequest("User driver adding error: " + error.message)
+        ApiError.badRequest("User driver add error:  " + error.message)
       );
     }
   }
@@ -388,4 +366,4 @@ class UserControllers {
   }
 }
 
-module.exports = new UserControllers();
+module.exports = new DriverControllers();
