@@ -7,6 +7,6 @@ const router = express.Router();
 
 // Admin va User route'larini birlashtirish
 router.use("/admin", adminRoutes);
-router.use("/auth", authRoutes);
+router.use("/auth/user", authRoutes);
 
 module.exports = router;

@@ -1,7 +1,6 @@
 const { Users, UserRegister, Driver } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const jwt = require("jsonwebtoken");
-// const userToken = require("./usetToken");
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 const validate = require("./validateFun");

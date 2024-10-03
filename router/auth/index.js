@@ -36,7 +36,7 @@ const upload = multer({
 ]);
 
 // driver registratsiyasi uchun endpoint
-router.post("/register/driver", upload, (req, res, next) => {
+router.post("/load-add", upload, (req, res, next) => {
   console.log("driver route hit");
   driverControllers.user2Add(req, res, next);
 });
