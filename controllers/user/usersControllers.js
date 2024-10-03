@@ -246,9 +246,14 @@ class UserControllers {
   async userLogin(req, res, next) {
     try {
       const { phone, password } = req.body;
+
+      // const users = await Users.findAll();
+      // console.log(users);
+
       if (!phone) {
-        return next(ApiError.badRequest("phone was not entered"));
+        return next(ApiError.badRequest("Phone was not entered"));
       }
+
       if (!password) {
         return next(
           ApiError.badRequest(
@@ -256,26 +261,30 @@ class UserControllers {
           )
         );
       }
+
       const user = await Users.findOne({
         where: {
-          [Op.or]: [{ status: "active" }, { status: "pending" }],
           phone: phone,
+          [Op.or]: [{ status: "active" }, { user_status: "confirm_phone" }],
         },
       });
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return next(
+          ApiError.badRequest("The password was entered incorrectly")
+        );
+      }
 
       if (!user) {
         return next(ApiError.badRequest("User not found"));
       }
 
-      if (user.password != password) {
-        return next(ApiError("The password was entered incorrectly"));
-      }
-
-      if (user.status == "pending") {
+      if (user.status === "pending") {
         const smsCode = helperFunctions.generateRandomCode();
         const userReg = await UserRegister.create({
           code: smsCode,
-          user_id: user_driver.id,
+          user_id: user.id,
         });
         return res.json({
           code: smsCode,
@@ -289,17 +298,16 @@ class UserControllers {
           role: user.role,
         });
 
-        const resData = {
+        return res.json({
           user_reg: true,
           token: token,
           id: user.id,
           role: user.role,
-        };
-        return res.json(resData);
+        });
       }
     } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest("User driver login error"));
+      console.log("Error details:", error);
+      return next(ApiError.badRequest("User login error: " + error.messagee));
     }
   }
 
