@@ -1,6 +1,6 @@
 /**
  * @swagger
- * /api/user/register:
+ * /api/register:
  *   post:
  *     summary: Register a new user
  *     description: Register a new user with required details.
@@ -55,7 +55,7 @@
 
 /**
  * @swagger
- * /api/user/load-add:
+ * /api/load-add:
  *   post:
  *     summary: Register a new cargo owner
  *     description: Registers a new cargo owner with the necessary details such as name, phone, password, birthday, and address.
@@ -122,7 +122,7 @@
 
 /**
  * @swagger
- * /api/auth/password-reset/send-code:
+ * /api/auth/send-code:
  *   post:
  *     summary: Request an SMS code for password reset
  *     description: User provides their phone number to request an SMS code for resetting their password.
@@ -158,7 +158,7 @@
 
 /**
  * @swagger
- * /api/auth/password-reset/verify-code:
+ * /api/auth/verify-code:
  *   post:
  *     summary: Verify the SMS code for password reset
  *     description: Verify the SMS code sent to the user's phone number for password reset.
@@ -197,7 +197,7 @@
 
 /**
  * @swagger
- * /api/auth/password-reset/new-password:
+ * /api/auth/new-password:
  *   post:
  *     summary: Reset the user's password
  *     description: Allows the user to reset their password after verifying the SMS code.
@@ -236,7 +236,7 @@
 
 /**
  * @swagger
- * /api/auth/password-reset/resend-code:
+ * /api/auth/resend-code:
  *   post:
  *     summary: Resend the SMS code for password reset
  *     description: Allows the user to request another SMS code if they didn't receive the first one.

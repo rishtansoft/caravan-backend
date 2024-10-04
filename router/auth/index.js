@@ -4,16 +4,9 @@ const path = require("path");
 const {
   loginAdminValidation,
 } = require("../../controllers/admin/authController");
-const usersControllers = require("../../controllers/user/usersControllers");
 const driverControllers = require("../../controllers/driver/driverController");
 
 const router = express.Router();
-
-// Admin registratsiyasi uchun endpoint
-router.post("/register", (req, res, next) => {
-  console.log("Register route hit");
-  usersControllers.userAdd(req, res, next);
-});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -35,13 +28,17 @@ const upload = multer({
   { name: "car_img", maxCount: 1 },
 ]);
 
+router.post("/register", driverControllers.userAdd);
 // driver registratsiyasi uchun endpoint
-router.post("/load-add", upload, (req, res, next) => {
-  console.log("driver route hit");
-  driverControllers.user2Add(req, res, next);
-});
+router.post("/load-add", upload, driverControllers.user2Add);
 
-//  login route'i
-router.post("/login", loginAdminValidation, usersControllers.userLogin);
+// verify
+router.post("/send-code", driverControllers.userPasswordChangSendCode);
+router.post("/verify-code", driverControllers.userPasswordChangCode);
+router.post("/new-password", driverControllers.userPasswordReset);
+router.post("/resend-code", driverControllers.smsCodeResend);
+
+//  login routeri
+router.post("/login", loginAdminValidation, driverControllers.userLogin);
 
 module.exports = router;
