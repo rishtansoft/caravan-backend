@@ -530,6 +530,15 @@ class DriverControllers {
       return next(ApiError.badRequest("Error resending SMS code"));
     }
   }
+
+  async userLogout(req, res, next) {
+    try {
+      res.clearCookie("token");
+      return res.status(200).json({ message: "Successfully logged out" });
+    } catch (error) {
+      next(ApiError.internal("Error logging out: " + error.message));
+    }
+  }
 }
 
 module.exports = new DriverControllers();

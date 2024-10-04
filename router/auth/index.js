@@ -40,5 +40,6 @@ router.post("/resend-code", driverControllers.smsCodeResend);
 
 //  login routeri
 router.post("/login", loginAdminValidation, driverControllers.userLogin);
+router.post("/logout", driverControllers.userLogout);
 
 module.exports = router;
