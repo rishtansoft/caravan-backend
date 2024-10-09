@@ -1,161 +1,223 @@
 const { DataTypes, Model } = require("sequelize");
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 module.exports = (sequelize) => {
   // Asosiy model
   class BaseModel extends Model {
     static init(attributes, options) {
-      super.init({
-        id: {
-          type: DataTypes.UUID,
-          defaultValue: DataTypes.UUIDV4,
-          primaryKey: true,
+      super.init(
+        {
+          id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+          },
+          status: {
+            type: DataTypes.ENUM("active", "inactive"),
+            defaultValue: "active",
+          },
+          ...attributes,
         },
-        status: {
-          type: DataTypes.ENUM('active', 'inactive'),
-          defaultValue: 'active',
-        },
-        ...attributes
-      }, {
-        sequelize,
-        timestamps: true,
-        ...options
-      });
+        {
+          sequelize,
+          timestamps: true,
+          ...options,
+        }
+      );
     }
   }
 
-  // Users modeli
   class Users extends BaseModel {
     static associate(models) {
-      Users.hasOne(models.Driver);
-      Users.hasMany(models.Load);
-      Users.hasMany(models.Notification);
+      Users.hasOne(models.Driver, { foreignKey: "user_id" });
+      Users.hasMany(models.Load, { foreignKey: "user_id" });
+      Users.hasMany(models.Notification, { foreignKey: "user_id" });
+      Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
     }
   }
 
-  Users.init({
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      set(value) {
-        this.setDataValue('password', bcrypt.hashSync(value, 10));
-      }
+  Users.init(
+    {
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      userid: {
+        type: DataTypes.STRING,
+        unique: true,
+      },
+      lastname: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      firstname: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      phone: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: false,
+        validate: {
+          is: /^\+?[1-9]\d{1,14}$/,
+        },
+      },
+      phone_2: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+          is: /^\+?[1-9]\d{1,14}$/,
+        },
+      },
+      birthday: DataTypes.DATEONLY,
+      user_img: DataTypes.STRING,
+      address: DataTypes.STRING,
+      role: {
+        type: DataTypes.ENUM("driver", "cargo_owner", "admin"),
+        allowNull: false,
+      },
+      user_status: {
+        type: DataTypes.ENUM("pending", "active", "inactive", "confirm_phone"),
+        defaultValue: "confirm_phone",
+      },
+      verification_code: DataTypes.STRING,
+      verification_expiry: DataTypes.DATE,
+      email: {
+        type: DataTypes.STRING,
+        unique: true,
+        validate: {
+          isEmail: true,
+        },
+      },
     },
-    userid: {
-      type: DataTypes.STRING,
-      unique: true,
-    },
-    lastname: DataTypes.STRING,
-    firstname: DataTypes.STRING,
-    phone: {
-      type: DataTypes.STRING,
-      unique: true, // Telefon raqam bir martalik bo'lishi kerak
-      validate: {
-        is: /^\+?[1-9]\d{1,14}$/
-      }
-    },
-    phone_2: {
-      type: DataTypes.STRING,
-      validate: {
-        is: /^\+?[1-9]\d{1,14}$/
-      }
-    },
-    birthday: DataTypes.DATEONLY,
-    user_img: DataTypes.STRING, // fayl yo'li
-    address: DataTypes.STRING,
-    role: {
-      type: DataTypes.ENUM('driver', 'cargo_owner', 'admin'), // Admin ham rolega qo'shildi
-      allowNull: false,
-    },
-    user_status: {
-      type: DataTypes.ENUM('pending', 'active', 'inactive', 'confirm_phone'),
-      defaultValue: "confirm_phone"
-    },
-    verification_code: DataTypes.STRING,
-    verification_expiry: DataTypes.DATE,
-    email: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-      validate: {
-        isEmail: true,
-      }
-    },
-  });
+    {
+      sequelize,
+      modelName: "Users",
+      hooks: {
+        beforeCreate: async (user) => {
+          if (user.password) {
+            user.password = await bcrypt.hash(user.password, 10);
+          }
+        },
+      },
+    }
+  );
 
   // Driver modeli
   class Driver extends BaseModel {
     static associate(models) {
-      Driver.belongsTo(models.Users);
-      Driver.hasMany(models.Assignment);
+      Driver.belongsTo(models.Users, {
+        foreignKey: "user_id",
+        targetKey: "id",
+      });
+      Driver.hasMany(models.Assignment, { foreignKey: "driver_id" });
     }
   }
 
-  Driver.init({
-    car_type: DataTypes.STRING,
-    name: DataTypes.STRING,
-    user_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Users',
-        key: 'id'
-      }
+  Driver.init(
+    {
+      car_type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      user_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Users",
+          key: "id",
+        },
+        allowNull: false,
+      },
+      tex_pas_ser: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      prava_ser: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      tex_pas_num: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      prava_num: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      car_img: DataTypes.STRING,
+      prava_img: DataTypes.STRING,
+      tex_pas_img: DataTypes.STRING,
+      driver_status: {
+        type: DataTypes.ENUM(
+          "empty",
+          "at_work",
+          "resting",
+          "offline",
+          "on_break"
+        ),
+        defaultValue: "offline",
+      },
+      is_approved: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false, // Yangi maydon qo'shildi, admin tomonidan tasdiqlangan yoki yo'q
+      },
+      blocked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false, // Haydovchi bloklangan yoki yo'q
+      },
     },
-    tex_pas_ser: DataTypes.STRING,
-    prava_ser: DataTypes.STRING,
-    tex_pas_num: DataTypes.STRING,
-    prava_num: DataTypes.STRING,
-    car_img: DataTypes.STRING, // fayl yo'li
-    prava_img: DataTypes.STRING, // fayl yo'li
-    tex_pas_img: DataTypes.STRING, // fayl yo'li
-    driver_status: {
-      type: DataTypes.ENUM('empty', 'at_work', 'resting', 'offline', 'on_break'),
-      defaultValue: 'offline'
-    },
-    is_approved: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false, // Yangi maydon qo'shildi, admin tomonidan tasdiqlangan yoki yo'q
-    },
-    blocked: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false, // Haydovchi bloklangan yoki yo'q
-    },
-  }, {
-    sequelize,
-    tableName: 'Driver', // jadval nomini majburlash
-  });
+    {
+      sequelize,
+      tableName: "Driver", // jadval nomini majburlash
+    }
+  );
 
   // Load modeli
   class Load extends BaseModel {
     static associate(models) {
-      Load.belongsTo(models.Users);
-      Load.hasOne(models.Assignment);
+      Load.belongsTo(models.Users, { foreignKey: "user_id" });
+      Load.hasOne(models.Assignment, { foreignKey: "load_id" });
     }
   }
 
-  Load.init({
-    user_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Users',
-        key: 'id'
-      }
+  Load.init(
+    {
+      user_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Users",
+          key: "id",
+        },
+      },
+      name: DataTypes.STRING,
+      cargo_type: DataTypes.STRING,
+      weight: DataTypes.FLOAT,
+      length: DataTypes.FLOAT,
+      width: DataTypes.FLOAT,
+      height: DataTypes.FLOAT,
+      load_img: DataTypes.STRING, 
+      car_type: DataTypes.STRING, 
+      receiver_phone: DataTypes.STRING, 
+      payer: DataTypes.STRING, 
+      description: DataTypes.TEXT, 
+      load_status: {
+        type: DataTypes.ENUM(
+          "posted",
+          "assigned",
+          "picked_up",
+          "in_transit",
+          "delivered"
+        ),
+        defaultValue: "posted",
+      },
     },
-    name: DataTypes.STRING,
-    cargo_type: DataTypes.STRING,
-    weight: DataTypes.FLOAT,
-    length: DataTypes.FLOAT,
-    width: DataTypes.FLOAT,
-    height: DataTypes.FLOAT,
-    load_img: DataTypes.STRING, // fayl yo'li
-    load_status: {
-      type: DataTypes.ENUM('posted', 'assigned', 'picked_up', 'in_transit', 'delivered'),
-      defaultValue: 'posted'
-    },
-  }, 
     {
       sequelize,
-      tableName: 'Load', // jadval nomini majburlash
+      tableName: "Load", // jadval nomini majburlash
     }
   );
 
@@ -169,31 +231,39 @@ module.exports = (sequelize) => {
     }
   }
 
-  Assignment.init({
-    load_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Load',
-        key: 'id'
-      }
+  Assignment.init(
+    {
+      load_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Load",
+          key: "id",
+        },
+      },
+      driver_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Driver",
+          key: "id",
+        },
+      },
+      assignment_status: {
+        type: DataTypes.ENUM(
+          "assigned",
+          "picked_up",
+          "in_transit",
+          "delivered"
+        ),
+        defaultValue: "assigned",
+      },
+      pickUpTime: DataTypes.DATE,
+      deliveryTime: DataTypes.DATE,
     },
-    driver_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: 'Driver',
-        key: 'id'
-      }
-    },
-    assignment_status: {
-      type: DataTypes.ENUM('assigned', 'picked_up', 'in_transit', 'delivered'),
-      defaultValue: 'assigned'
-    },
-    pickUpTime: DataTypes.DATE,
-    deliveryTime: DataTypes.DATE,
-  }, {
-    sequelize,
-    tableName: 'Assignment', // jadval nomini majburlash
-  });
+    {
+      sequelize,
+      tableName: "Assignment", // jadval nomini majburlash
+    }
+  );
 
   // Location modeli
   class Location extends BaseModel {
@@ -206,9 +276,9 @@ module.exports = (sequelize) => {
     assignment_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Assignment',
-        key: 'id'
-      }
+        model: "Assignment",
+        key: "id",
+      },
     },
     start_latitude: {
       type: DataTypes.DECIMAL(10, 8),
@@ -228,7 +298,7 @@ module.exports = (sequelize) => {
     },
     order: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
     },
   });
 
@@ -243,9 +313,9 @@ module.exports = (sequelize) => {
     assignment_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Assignment',
-        key: 'id'
-      }
+        model: "Assignment",
+        key: "id",
+      },
     },
     latitude: {
       type: DataTypes.DECIMAL(10, 8),
@@ -265,7 +335,7 @@ module.exports = (sequelize) => {
     },
     order: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
     },
   });
 
@@ -280,9 +350,9 @@ module.exports = (sequelize) => {
     assignment_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Assignment',
-        key: 'id'
-      }
+        model: "Assignment",
+        key: "id",
+      },
     },
     time: DataTypes.DATE,
     latitude: {
@@ -295,7 +365,7 @@ module.exports = (sequelize) => {
     },
     order: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
     },
   });
 
@@ -311,23 +381,86 @@ module.exports = (sequelize) => {
     load_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Load',
-        key: 'id'
-      }
+        model: "Load",
+        key: "id",
+      },
     },
     user_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Users',
-        key: 'id'
-      }
+        model: "Users",
+        key: "id",
+      },
     },
     message: DataTypes.TEXT,
     order: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
     },
   });
+
+  class UserRegister extends BaseModel {
+    static associate(models) {
+      UserRegister.belongsTo(models.Users, { foreignKey: "user_id" });
+    }
+  }
+
+  UserRegister.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        allowNull: false,
+        primaryKey: true,
+      },
+      code: {
+        type: DataTypes.STRING,
+      },
+      user_id: {
+        type: DataTypes.UUID,
+        references: {
+          model: "Users",
+          key: "id",
+        },
+      },
+      time: {
+        type: DataTypes.STRING,
+      },
+      status: {
+        type: DataTypes.ENUM("active", "inactive"),
+        defaultValue: "active",
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        field: "updated_at",
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        field: "created_at",
+      },
+    },
+    {
+      sequelize,
+      tableName: "user_registers",
+    }
+  );
+
+  Users.associate = (models) => {
+    Users.hasOne(models.Driver);
+    Users.hasMany(models.Load);
+    Users.hasMany(models.Notification);
+    Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
+  };
+
+  Driver.associate = (models) => {
+    Driver.belongsTo(models.Users);
+    Driver.hasMany(models.Assignment);
+  };
+
+  Load.associate = (models) => {
+    Load.belongsTo(models.Users);
+    Load.hasOne(models.Assignment);
+  };
 
   return {
     Users,
@@ -337,6 +470,7 @@ module.exports = (sequelize) => {
     Location,
     DriverStop,
     LocationCron,
-    Notification
+    Notification,
+    UserRegister,
   };
 };
