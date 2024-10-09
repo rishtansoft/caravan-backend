@@ -2,6 +2,7 @@ const express = require("express");
 const adminRoutes = require("./admin/index");
 const authRoutes = require("./auth/index");
 const usersRoutes = require("./user/index");
+const loadsRoutes = require("./load/index");
 
 const router = express.Router();
 
@@ -9,5 +10,6 @@ const router = express.Router();
 router.use("/admin", adminRoutes);
 router.use("/auth", authRoutes);
 router.use("/users", usersRoutes);
+router.use("/loads", loadsRoutes);
 
 module.exports = router;

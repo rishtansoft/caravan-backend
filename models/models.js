@@ -199,7 +199,11 @@ module.exports = (sequelize) => {
       length: DataTypes.FLOAT,
       width: DataTypes.FLOAT,
       height: DataTypes.FLOAT,
-      load_img: DataTypes.STRING, // fayl yo'li
+      load_img: DataTypes.STRING, 
+      car_type: DataTypes.STRING, 
+      receiver_phone: DataTypes.STRING, 
+      payer: DataTypes.STRING, 
+      description: DataTypes.TEXT, 
       load_status: {
         type: DataTypes.ENUM(
           "posted",
