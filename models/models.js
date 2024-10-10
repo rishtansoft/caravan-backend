@@ -230,8 +230,8 @@ module.exports = (sequelize) => {
   // Assignment modeli
   class Assignment extends BaseModel {
     static associate(models) {
-      Assignment.belongsTo(models.Driver);
-      Assignment.belongsTo(models.Load);
+      Assignment.belongsTo(models.Driver, { foreignKey: 'driver_id' });
+      Assignment.belongsTo(models.Load , { foreignKey: 'load_id' });
       Assignment.hasMany(models.Location);
       Assignment.hasMany(models.DriverStop);
     }
@@ -267,7 +267,7 @@ module.exports = (sequelize) => {
     },
     {
       sequelize,
-      tableName: "Assignment", // jadval nomini majburlash
+      tableName: "Assignment", 
     }
   );
 
