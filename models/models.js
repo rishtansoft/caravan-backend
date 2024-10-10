@@ -126,12 +126,13 @@ module.exports = (sequelize) => {
       },
       user_id: {
         type: DataTypes.UUID,
+        allowNull: false,
         references: {
           model: "Users",
           key: "id",
         },
-        allowNull: false,
       },
+      
       tex_pas_ser: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -186,6 +187,11 @@ module.exports = (sequelize) => {
 
   Load.init(
     {
+       id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
       user_id: {
         type: DataTypes.UUID,
         references: {
@@ -217,7 +223,7 @@ module.exports = (sequelize) => {
     },
     {
       sequelize,
-      tableName: "Load", // jadval nomini majburlash
+      tableName: "Load",
     }
   );
 

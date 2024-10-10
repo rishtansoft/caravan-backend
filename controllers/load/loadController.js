@@ -1,9 +1,6 @@
 const { Users, Driver, Load } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
-// const { Op } = require("sequelize");
-// const validate = require("../user/validateFun");
-// const helperFunctions = require("../user/helperFunctions");
 
 class LoadController {
   async  createLoad(req, res, next) {
@@ -55,47 +52,50 @@ class LoadController {
   }
 
   async  getLoad(req, res, next) {
-  try {
-    const { loadId } = req.params;
+    try {
+      const { loadId } = req.params;
 
-    const load = await Load.findByPk(loadId);
+      const load = await Load.findByPk(loadId);
 
-    if (!load) {
-      return next(ApiError.notFound("Load not found"));
+      if (!load) {
+        return next(ApiError.notFound("Load not found"));
+      }
+
+      return res.status(200).json(load);
+    } catch (error) {
+      next(ApiError.internal("Error fetching load: " + error.message));
     }
-
-    return res.status(200).json(load);
-  } catch (error) {
-    next(ApiError.internal("Error fetching load: " + error.message));
-  }
   }
 
   async  updateLoad(req, res, next) {
-  try {
-    const { loadId } = req.params;
-    const { name, cargo_type, weight, length, width, height, load_img } = req.body;
+    try {
+      const { loadId } = req.params;
+      const { name, cargo_type, weight, length, width, height, load_img,description ,payer,receiver_phone} = req.body;
 
-    const load = await Load.findByPk(loadId);
+      const load = await Load.findByPk(loadId);
 
-    if (!load) {
-      return next(ApiError.notFound("Load not found"));
+      if (!load) {
+        return next(ApiError.notFound("Load not found"));
+      }
+
+  
+      load.name = name || load.name;
+      load.cargo_type = cargo_type || load.cargo_type;
+      load.weight = weight || load.weight;
+      load.length = length || load.length;
+      load.width = width || load.width;
+      load.height = height || load.height;
+      load.load_img = load_img || load.load_img;
+      load.description = description || load.description;
+      load.payer = payer || load.payer;
+      load.receiver_phone = receiver_phone || load.receiver_phone;
+
+      await load.save();
+
+      return res.status(200).json({ message: "Load updated successfully", load });
+    } catch (error) {
+      next(ApiError.internal("Error updating load: " + error.message));
     }
-
-    // Update only the fields that are provided
-    load.name = name || load.name;
-    load.cargo_type = cargo_type || load.cargo_type;
-    load.weight = weight || load.weight;
-    load.length = length || load.length;
-    load.width = width || load.width;
-    load.height = height || load.height;
-    load.load_img = load_img || load.load_img;
-
-    await load.save();
-
-    return res.status(200).json({ message: "Load updated successfully", load });
-  } catch (error) {
-    next(ApiError.internal("Error updating load: " + error.message));
-  }
   }
 
   async  deleteLoad(req, res, next) {
