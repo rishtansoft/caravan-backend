@@ -563,6 +563,43 @@ class DriverControllers {
       next(ApiError.internal("Error logging out: " + error.message));
     }
   }
+
+  async updateDriverDetails(req, res, next) {
+    try {
+
+    const { car_type, name, tex_pas_ser, prava_ser, tex_pas_num, prava_num } = req.body;
+    const userId = req.user.id; 
+
+    const user = await Users.findByPk(userId);
+    if(!user || user.role !== "driver") {
+      return next(ApiError.badRequest("User is not a driver" ))
+    }
+
+    let driver = await Driver.findOne({where : {
+      user_id:  userId
+    }})
+
+     if (driver) {
+      await driver.update({ car_type, name, tex_pas_ser, prava_ser, tex_pas_num, prava_num });
+    } else {
+      driver = await Driver.create({
+        user_id: userId,
+        car_type,
+        name,
+        tex_pas_ser,
+        prava_ser,
+        tex_pas_num,
+        prava_num,
+      });
+    }
+
+     return res.json({ message: "Driver details updated successfully", driver_id: driver.id });
+      
+    } catch (error) {
+      console.log("Error during driver update " + error.message);
+      return next(ApiError.internal("Error updating driver details " + error.message))
+    }
+  }
 }
 
 module.exports = new DriverControllers();
