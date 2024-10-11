@@ -164,11 +164,11 @@ module.exports = (sequelize) => {
       },
       is_approved: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false, // Yangi maydon qo'shildi, admin tomonidan tasdiqlangan yoki yo'q
+        defaultValue: false, 
       },
       blocked: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false, // Haydovchi bloklangan yoki yo'q
+        defaultValue: false, 
       },
     },
     {
