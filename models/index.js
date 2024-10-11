@@ -9,6 +9,6 @@ Object.keys(models).forEach((modelName) => {
   }
 });
 
-console.log(models, "my models");
+// console.log(models, "my models");
 
 module.exports = models;

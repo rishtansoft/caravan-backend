@@ -22,6 +22,13 @@ class DriverControllers {
         password,
         password_rep,
         role,
+        // Add driver-specific fields
+        car_type,
+        name,
+        tex_pas_ser,
+        prava_ser,
+        tex_pas_num,
+        prava_num,
       } = req.body;
 
       // Validate inputs
@@ -78,7 +85,24 @@ class DriverControllers {
         user_status: "confirm_phone",
       });
 
-      console.log(newUser);
+
+        // If the role is 'driver', create a driver record
+      let newDriver;
+      if (role === 'driver') {
+        if (!car_type || !name || !tex_pas_ser || !prava_ser || !tex_pas_num || !prava_num) {
+          return next(ApiError.badRequest("Missing required driver information"));
+        }
+        newDriver = await Driver.create({
+          user_id: newUser.id,
+          car_type,
+          name,
+          tex_pas_ser,
+          prava_ser,
+          tex_pas_num,
+          prava_num,
+        });
+      }
+
 
       // Save the verification code for the user
       const userReg = await UserRegister.create({
@@ -101,7 +125,7 @@ class DriverControllers {
       }
       console.log(error.stack);
       return next(
-        ApiError.badRequest("User driver adding error: " + error.message)
+        ApiError.badRequest("User/Driver adding error: " + error.message)
       );
     }
   }

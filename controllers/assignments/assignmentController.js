@@ -9,7 +9,12 @@ class assignmentController {
       const { load_id, driver_id } = req.body;
 
       const load = await Load.findByPk(load_id);
-      // const driver = await Driver.findByPk(driver_id);
+      const driver = await Driver.findOne({
+        where: {
+          user_id: driver_id
+        }
+      })
+      ;
       const drivers = await Driver.findAll()
       console.log("drivers  " + drivers);
       console.log("Load " + load);
@@ -26,8 +31,8 @@ class assignmentController {
 
 
       const assignment = await Assignment.create({
-        load_id,
-        driver_id,
+        load_id: load_id,
+        driver_id: driver.id,
         assignment_status: 'assigned'
       });
 
