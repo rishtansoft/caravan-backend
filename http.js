@@ -1,20 +1,30 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const router = require("./router/index");
 const errorHandler = require("./middleware/ErrorHandlingMiddlware");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
+const http = require('http');
 
 const app = express();
-const http = require('http')
+
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-app.use("/api", router);
-app.use(errorHandler);
-app.use('/uploads', express.static('uploads'));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 
 app.use((req, res, next) => {
     res.header({
@@ -25,8 +35,16 @@ app.use((req, res, next) => {
     next();
 });
 
-// swagger
-// Swagger options
+// Static file serving
+app.use('/uploads', express.static('uploads'));
+
+// Routes
+app.use("/api", router);
+
+
+app.use(errorHandler);
+
+
 const swaggerOptions = {
     swaggerDefinition: {
       openapi: '3.0.0',
@@ -42,17 +60,16 @@ const swaggerOptions = {
       ],
     },
     apis: ['./swagger/admin/auth.js'],
-  };
+};
 
-  // Swagger docs va UI ni o'rnatish
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
+// Root route
 app.get('/', async (req, res) => {
-    res.json('hello')
-})
+    res.json('hello');
+});
 
-const server = http.createServer(app)
+const server = http.createServer(app);
 
 module.exports = server;
