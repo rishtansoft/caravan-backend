@@ -201,6 +201,9 @@ module.exports = (sequelize) => {
       },
       name: DataTypes.STRING,
       cargo_type: DataTypes.STRING,
+      origin_location: DataTypes.STRING,
+      destination_location: DataTypes.STRING,
+      stop_location: DataTypes.STRING,
       weight: DataTypes.FLOAT,
       length: DataTypes.FLOAT,
       width: DataTypes.FLOAT,
@@ -210,6 +213,7 @@ module.exports = (sequelize) => {
       receiver_phone: DataTypes.STRING, 
       payer: DataTypes.STRING, 
       description: DataTypes.TEXT, 
+      loading_time: DataTypes.DATE,
       load_status: {
         type: DataTypes.ENUM(
           "posted",

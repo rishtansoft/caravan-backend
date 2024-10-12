@@ -1,55 +1,80 @@
-const { Users, Driver, Load } = require("../../models/index");
+const { Users,  Load } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
 
 class LoadController {
-  async  createLoad(req, res, next) {
+  // Loads
+  async  createLoadStep1 (req, res, next) {
     try {
-      const {  name,
-      cargo_type,
-      weight,
-      length,
-      width,
-      height,
-      load_img,
-      car_type,
-      receiver_phone,
-      payer,
-      description } = req.body;
-
-      
-      const user_id = req.user.id; 
+      const { origin_location, destination_location, stop_location } = req.body;
+      const user_id = req.user.id;
 
       const user = await Users.findByPk(user_id);
-
-      if( !user ) {
-         return next(ApiError.forbidden("User not found"))
+      if (!user) {
+        return next(ApiError.forbidden("User not found"));
       }
 
-      if( user.role ==="driver" ) {
-        return next(ApiError.forbidden("Drivers are not allowed to create loads"))
+      if (user.role === "driver") {
+        return next(ApiError.forbidden("Drivers are not allowed to create loads"));
       }
 
       const newLoad = await Load.create({
-      user_id,
-      name,
-      cargo_type,
-      weight,
-      length,
-      width,
-      height,
-      load_img,
-      car_type,
-      receiver_phone,
-      payer,
-      description
+        user_id,
+        origin_location,
+        destination_location,
+        stop_location,
       });
 
-      return res.status(201).json({ message: "Load created successfully", load: newLoad });
+      return res.status(201).json({ message: "Load step 1 completed", load_id: newLoad.id });
     } catch (error) {
-      next(ApiError.internal("Error creating load: " + error.message));
+      next(ApiError.internal("Error creating load step 1: " + error.message));
     }
   }
+
+  async createLoadStep2 (req, res, next) {
+    try {
+      const { load_id, cargo_type, weight, height, loading_time, car_type } = req.body;
+
+      const load = await Load.findByPk(load_id);
+      if (!load) {
+        return next(ApiError.notFound("Load not found"));
+      }
+
+      await load.update({
+        cargo_type,
+        weight,
+        height,
+        loading_time,
+        car_type,
+      });
+
+      return res.status(200).json({ message: "Load step 2 completed", load_id: load.id });
+    } catch (error) {
+      next(ApiError.internal("Error updating load step 2: " + error.message));
+    }
+  };
+
+  async createLoadStep3 (req, res, next) {
+    try {
+      const { load_id, receiver_phone, payer, description, driver_return } = req.body;
+
+      const load = await Load.findByPk(load_id);
+      if (!load) {
+        return next(ApiError.notFound("Load not found"));
+      }
+
+      await load.update({
+        receiver_phone,
+        payer,
+        description,
+        driver_return,
+      });
+
+      return res.status(200).json({ message: "Load created successfully", load: load });
+    } catch (error) {
+      next(ApiError.internal("Error completing load creation: " + error.message));
+    }
+  };
 
   async  getLoad(req, res, next) {
     try {
@@ -131,6 +156,7 @@ class LoadController {
     }
 
   }
+
 }
 
 

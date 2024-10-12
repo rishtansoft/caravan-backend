@@ -1,4 +1,4 @@
-const { Users, Driver } = require("../../models/index");
+const { Users, Driver, UserRegister } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const validateFun = require("./validateFun");
 const bcrypt = require('bcrypt');
@@ -187,6 +187,34 @@ class UserControllers {
       console.log(error);
       return next(ApiError.internal("User registration error " + error.message))
       
+    }
+  }
+
+  async  verifyPhone(req, res, next) {
+    try {
+      const { user_id, code } = req.body;
+
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+
+      const userRegister = await UserRegister.findOne({
+        where: { user_id, code, status: 'active' }
+      });
+
+      if (!userRegister) {
+        return next(ApiError.badRequest("Invalid or expired verification code"));
+      }
+
+
+      await user.update({ user_status: "active" });
+      await userRegister.update({ status: "inactive" });
+
+      return res.json({ message: "Phone number verified successfully. You can now log in." });
+    } catch (error) {
+      console.error(error);
+      return next(ApiError.internal("Phone verification error"));
     }
   }
 
