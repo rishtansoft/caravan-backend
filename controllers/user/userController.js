@@ -1,8 +1,10 @@
 const { Users, Driver, UserRegister } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const validateFun = require("./validateFun");
+const { Op } = require("sequelize");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const helperFunctions = require("./helperFunctions");
 require("dotenv").config();
 
 class UserControllers {
@@ -107,6 +109,13 @@ class UserControllers {
       }
 
 
+          // Check if session is available
+      if (!req.session) {
+        console.error('Session middleware is not properly configured');
+        return next(ApiError.internal("Server configuration error"));
+      }
+
+
       req.session.initialRegistration = { phone, password, lastname, firstname };
 
       return res.json({ message: "Initial registration successful. Please complete your profile." });
@@ -122,6 +131,9 @@ class UserControllers {
     try {
 
         const { phone_2, birthday, role } = req.body;
+
+        console.log(req.session);
+        
     const { phone, password, lastname, firstname } = req.session.initialRegistration;
       
        // Validate inputs
