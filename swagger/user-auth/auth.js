@@ -196,7 +196,7 @@
 
 /**
  * @swagger
- * /login:
+ * /user/mobile-login:
  *   post:
  *     summary: Foydalanuvchini tizimga kirish
  *     tags: [User]
@@ -257,4 +257,66 @@
  *                   type: string
  *                   description: Serverdagi xatolik haqida ma'lumot
  *                   example: "Login error: {error_message}"
+ */
+
+/**
+ * @swagger
+ * /user/check-driver-info/{user_id}:
+ *   get:
+ *     summary: Driver ma'lumotlarini tekshirish
+ *     tags: [User]
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         description: Foydalanuvchining noyob identifikatori (ID)
+ *         schema:
+ *           type: string
+ *           example: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Muvaffaqiyatli tekshirish
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Tekshirish natijasi
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   description: Muvaffaqiyatli tekshirish xabari
+ *                   example: "Hammasi joyida"
+ *       400:
+ *         description: Xatoliklar (foydalanuvchi topilmadi yoki driver ma'lumotlari yo'q)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Tekshirish natijasi
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   description: Xatolik haqida ma'lumot
+ *                   example: "Texnik pasport seriyasi kiritilmagan" | "Driver ma'lumotlari topilmadi"
+ *       500:
+ *         description: Server xatosi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Tekshirish natijasi
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   description: Serverdagi xatolik haqida ma'lumot
+ *                   example: "Xatolik yuz berdi: {error_message}"
  */
