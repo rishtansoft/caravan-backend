@@ -25,7 +25,6 @@ app.use(session({
   }
 }));
 
-
 app.use((req, res, next) => {
     res.header({
         "Access-Control-Allow-Origin": "*",
@@ -40,7 +39,6 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api", router);
-
 
 app.use(errorHandler);
 
@@ -59,7 +57,7 @@ const swaggerOptions = {
         },
       ],
     },
-    apis: ['./swagger/admin/auth.js'],
+    apis: ['./swagger/admin-auth/auth.js', './swagger/user-auth/auth.js'],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
@@ -67,6 +65,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Root route
 app.get('/', async (req, res) => {
+    console.log("test");
     res.json('hello');
 });
 

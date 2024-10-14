@@ -9,8 +9,6 @@ router.post('/register/initial', userController.initialRegistration);
 router.post('/register/complete', userController.completeRegistration);
 router.post('/verify-phone', userController.verifyPhone);
 
-
-
 // verify
 router.post("/send-code", driverControllers.userPasswordChangSendCode);
 router.post("/verify-code", driverControllers.userPasswordChangCode);
