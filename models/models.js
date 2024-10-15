@@ -73,7 +73,7 @@ module.exports = (sequelize) => {
       user_img: DataTypes.STRING,
       address: DataTypes.STRING,
       role: {
-        type: DataTypes.ENUM("driver", "cargo_owner", "admin"),
+        type: DataTypes.ENUM("driver", "cargo_owner", "admin", "unassigned"),
         allowNull: false,
       },
       user_status: {
