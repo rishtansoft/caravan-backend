@@ -107,16 +107,39 @@ class UserControllers {
         return next(ApiError.badRequest("This phone number is already registered."));
       }
 
+    console.log("Password to be hashed:", password);
+    const salt = await bcrypt.genSalt(10);
+    console.log("Generated salt:", salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log("Hashed password:", hashedPassword);
 
-      // Check if session is available
-      if (!req.session) {
-        console.error('Session middleware is not properly configured');
-        return next(ApiError.internal("Server configuration error"));
-      }
 
-      req.session.initialRegistration = { phone, password, lastname, firstname };
 
-      return res.json({ message: "Initial registration successful. Please complete your profile." });
+    const user = await Users.create({
+      phone,
+      password: hashedPassword, 
+      lastname,
+      firstname,
+      user_status: 'pending',
+      role: "unassigned",
+    })
+
+   const verifyUser = await Users.findByPk(user.id);
+    console.log("Verified stored hash:", verifyUser.password);
+
+    const isPasswordValid = await bcrypt.compare(password, verifyUser.password);
+    console.log("Initial password verification:", isPasswordValid);
+
+    // Add these tests
+    console.log("Hashed password length:", hashedPassword.length);
+    console.log("Stored password length:", verifyUser.password.length);
+    console.log("Are hashes identical?", hashedPassword === verifyUser.password);
+
+    return res.json({
+      message: "Initial registration successful. Please complete your profile.",
+      user_id: user.id,
+    });
+
 
     } catch (error) {
       console.log(error);
@@ -127,42 +150,51 @@ class UserControllers {
 
   async completeRegistration(req, res, next) {
     try {
+      const { phone_2, birthday, role, user_id } = req.body;
 
-      const { phone_2, birthday, role } = req.body;
+      console.log("Completing registration for user_id:", user_id);
 
-      const { phone, password, lastname, firstname } = req.session.initialRegistration;
+      const user = await Users.findOne({
+        where: {
+          id: user_id,
+        }
+      });
 
-      // Validate inputs
-      if (!role) {
-        return next(ApiError.badRequest("role was not entered"));
+      console.log("User found:", user ? "Yes" : "No");
+      if (user) {
+        console.log("User status:", user.user_status);
       }
-      if (!birthday) {
-        return next(ApiError.badRequest("birthday was not entered"));
+
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
       }
 
-      if (!validateFun.validatePhoneNumber(phone_2)) {
-        return next(
-          ApiError.badRequest("Phone number is not formatted correctly")
-        );
+      if (user.user_status === 'confirm_phone') {
+        // The user has already completed this stage
+        return res.json({
+          message: "Registration already completed. Please verify your phone number.",
+          user_id: user.id,
+          smsCode: user.smsCode
+        });
+      }
+
+      if (user.user_status !== 'pending') {
+        return next(ApiError.badRequest(`User status is ${user.user_status}, expected 'pending'`));
       }
 
       const smsCode = helperFunctions.generateRandomCode();
 
-      const newUser = await Users.create({
-        lastname,
-        firstname,
-        phone,
-        phone_2,
-        password,
-        birthday,
-        role,
-        verification_code: smsCode,
-        user_status: "confirm_phone",
-      });
+      user.phone_2 = phone_2;
+      user.birthday = birthday;
+      user.role = role;
+      user.verification_code = smsCode;
+      user.user_status = 'confirm_phone'; 
+
+      await user.save();
 
       if (role === 'driver') {
         await Driver.create({
-          user_id: newUser.id,
+          user_id: user.id,
           birthday: birthday,
           car_type: '',
           name: '',
@@ -177,21 +209,25 @@ class UserControllers {
 
       await UserRegister.create({
         code: smsCode,
-        user_id: newUser.id,
+        user_id: user.id,
+        user
       });
 
-      delete req.session.initialRegistration;
+      const fullUser = await Users.findOne({
+        where: { id: user.id },
+      });
+
+      console.log("Registration completed successfully for user_id:", user_id);
 
       return res.json({
         message: "Registration complete. Please verify your phone number.",
-        user_id: newUser.id,
-        smsCode: smsCode
+        user_id: user.id,
+        smsCode: smsCode,
+        fullUser
       });
-
     } catch (error) {
-      console.log(error);
-      return next(ApiError.internal("User registration error " + error.message))
-
+      console.error("Error in completeRegistration:", error);
+      return next(ApiError.internal("User registration error: " + error.message));
     }
   }
 
@@ -232,9 +268,20 @@ class UserControllers {
         return next(ApiError.badRequest("User not found"))
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) return next(ApiError.badRequest("Invalid password"));
+      console.log(user);
+      
 
+      console.log("User found:", user.id);
+      console.log("Stored hashed password:", user.password);
+      console.log("Entered password:", password);
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log("Password comparison result:", isPasswordValid);
+
+      if (!isPasswordValid) {
+        console.log("Password comparison failed.");  
+        return next(ApiError.badRequest("Invalid password"));
+      }
 
       const token = jwt.sign(
         { id: user.id, phone: user.phone, role: user.role },
@@ -249,7 +296,6 @@ class UserControllers {
       return next(ApiError.internal("Login error " + error.message))
     }
   }
-
 }
 
 module.exports = new UserControllers();
