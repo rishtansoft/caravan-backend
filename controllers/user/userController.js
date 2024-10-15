@@ -296,6 +296,73 @@ class UserControllers {
       return next(ApiError.internal("Login error " + error.message))
     }
   }
+
+  async checkDriverInfo(req, res, next) {
+    try {
+        const { user_id } = req.query;
+        
+        // Foydalanuvchini tekshirish
+        const user = await Users.findByPk(user_id);
+
+        
+        
+        if (!user) {
+            return next(ApiError.badRequest("Foydalanuvchi topilmadi"));
+        }
+
+        // Agar foydalanuvchi driver bo'lsa
+        if (user.role === 'driver') {
+            const driverInfo = await Driver.findOne({ where: { user_id } });
+
+            if (!driverInfo) {
+                return next(ApiError.badRequest("Driver ma'lumotlari topilmadi"));
+            }
+
+            // Kerakli ma'lumotlarni tekshirish
+            const {
+                tex_pas_ser,
+                prava_ser,
+                tex_pas_num,
+                prava_num,
+                is_approved,
+                blocked,
+                car_type
+            } = driverInfo;
+
+            // Ma'lumotlarni tekshirish
+            if (!tex_pas_ser) {
+                return res.json({ success: false, message: "Texnik pasport seriyasi kiritilmagan" });
+            }
+            if (!prava_ser) {
+                return res.json({ success: false, message: "Haydovchilik guvohnomasi seriyasi kiritilmagan" });
+            }
+            if (!tex_pas_num) {
+                return res.json({ success: false, message: "Texnik pasport raqami kiritilmagan" });
+            }
+            if (!prava_num) {
+                return res.json({ success: false, message: "Haydovchilik guvohnomasi raqami kiritilmagan" });
+            }
+            if (is_approved !== true) {
+                return res.json({ success: false, message: "Haydovchilik ma'lumotlari tasdiqlanmagan" });
+            }
+            if (blocked === true) {
+                return res.json({ success: false, message: "Haydovchi bloklangan" });
+            }
+            if (!car_type) {
+                return res.json({ success: false, message: "Avtomobil turi kiritilmagan" });
+            }
+
+            // Agar barcha ma'lumotlar to'g'ri bo'lsa
+            return res.json({ success: true, message: "Hammasi joyida" });
+        } else {
+            return res.json({ success: false, message: "Foydalanuvchi driver emas" });
+        }
+    } catch (error) {
+        console.error("Driver ma'lumotlarini tekshirishda xato: ", error);
+        return next(ApiError.internal("Xatolik yuz berdi: " + error.message));
+    }
+}
+
 }
 
 module.exports = new UserControllers();

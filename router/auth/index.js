@@ -19,4 +19,7 @@ router.post("/resend-code", driverControllers.smsCodeResend);
 router.post("/login",  userController.login);
 router.post("/logout", driverControllers.userLogout);
 
+// check driver is full regisgtered
+router.post("/check-driver", userController.checkDriverInfo);
+
 module.exports = router;
