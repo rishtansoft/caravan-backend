@@ -16,6 +16,11 @@ class HelperFunction {
 
     return result;
   }
+
+  generateUniqueId = function() {
+    // Masalan, 6 xonali tasodifiy raqam generatsiya qilish
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6 xonali raqam
+  }
   uploadQ() {
     const storage = multer.diskStorage({
       destination: function (req, file, cb) {
