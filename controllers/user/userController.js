@@ -123,6 +123,7 @@ class UserControllers {
         user_id: newUser.id
       });
 
+
     } catch (error) {
       console.error("Registration error: ", error);
       return next(ApiError.internal("User registration error " + error.message));
@@ -208,6 +209,7 @@ class UserControllers {
         if (!existingUser) {
           isUnique = true;
         }
+
       }
 
       // SMS kod va muddati
@@ -237,8 +239,8 @@ class UserControllers {
         message: "Registration complete. Please verify your phone number.",
         user_id: user.id,
         smsCode: smsCode // SMS kodni API javobida yubormaslik tavsiya qilinadi, lekin bu testlash uchun kiritilgan
-      });
 
+      });
     } catch (error) {
       console.error(error);
       return next(ApiError.internal("User registration error " + error.message));
@@ -323,6 +325,7 @@ class UserControllers {
       }
   
       // Foydalanuvchi uchun JWT token yaratish
+
       const token = jwt.sign(
         { id: user.id, unique_id: user.unique_id, phone: user.phone, role: user.role },
         process.env.SECRET_KEY,  // Token uchun maxfiy kalit
@@ -362,7 +365,7 @@ class UserControllers {
         const driverInfo = await Driver.findOne({ where: { user_id } });
 
         if (!driverInfo) {
-          return next(ApiError.badRequest("Driver ma'lumotlari topilmadi"));
+
         }
 
         // Kerakli ma'lumotlarni tekshirish

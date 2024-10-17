@@ -80,6 +80,7 @@ module.exports = (sequelize) => {
       role: {
         type: DataTypes.ENUM("driver", "cargo_owner", "admin"),
         allowNull: true,
+
       },
       user_status: {
         type: DataTypes.ENUM("pending", "active", "inactive", "confirm_phone"),
