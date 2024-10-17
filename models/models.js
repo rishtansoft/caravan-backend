@@ -38,6 +38,11 @@ module.exports = (sequelize) => {
 
   Users.init(
     {
+      unique_id: {
+        type: DataTypes.STRING, // yoki INTEGER, agar siz raqamli bo'lishini xohlasangiz
+        allowNull: true,
+        unique: true, // noyob qilib belgilash
+      },
       password: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -73,8 +78,9 @@ module.exports = (sequelize) => {
       user_img: DataTypes.STRING,
       address: DataTypes.STRING,
       role: {
-        type: DataTypes.ENUM("driver", "cargo_owner", "admin", "unassigned"),
-        allowNull: false,
+        type: DataTypes.ENUM("driver", "cargo_owner", "admin"),
+        allowNull: true,
+
       },
       user_status: {
         type: DataTypes.ENUM("pending", "active", "inactive", "confirm_phone"),
@@ -132,7 +138,7 @@ module.exports = (sequelize) => {
           key: "id",
         },
       },
-      
+
       tex_pas_ser: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -164,11 +170,11 @@ module.exports = (sequelize) => {
       },
       is_approved: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false, 
+        defaultValue: false,
       },
       blocked: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false, 
+        defaultValue: false,
       },
     },
     {
@@ -187,7 +193,7 @@ module.exports = (sequelize) => {
 
   Load.init(
     {
-       id: {
+      id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
@@ -208,11 +214,11 @@ module.exports = (sequelize) => {
       length: DataTypes.FLOAT,
       width: DataTypes.FLOAT,
       height: DataTypes.FLOAT,
-      load_img: DataTypes.STRING, 
-      car_type: DataTypes.STRING, 
-      receiver_phone: DataTypes.STRING, 
-      payer: DataTypes.STRING, 
-      description: DataTypes.TEXT, 
+      load_img: DataTypes.STRING,
+      car_type: DataTypes.STRING,
+      receiver_phone: DataTypes.STRING,
+      payer: DataTypes.STRING,
+      description: DataTypes.TEXT,
       loading_time: DataTypes.DATE,
       load_status: {
         type: DataTypes.ENUM(
@@ -235,7 +241,7 @@ module.exports = (sequelize) => {
   class Assignment extends BaseModel {
     static associate(models) {
       Assignment.belongsTo(models.Driver, { foreignKey: 'driver_id' });
-      Assignment.belongsTo(models.Load , { foreignKey: 'load_id' });
+      Assignment.belongsTo(models.Load, { foreignKey: 'load_id' });
       Assignment.hasMany(models.Location);
       Assignment.hasMany(models.DriverStop);
     }
@@ -271,7 +277,7 @@ module.exports = (sequelize) => {
     },
     {
       sequelize,
-      tableName: "Assignment", 
+      tableName: "Assignment",
     }
   );
 
@@ -411,10 +417,11 @@ module.exports = (sequelize) => {
 
   class UserRegister extends BaseModel {
     static associate(models) {
+      // Foydalanuvchi bilan bog'lanish (UserRegister foydalanuvchi jadvali bilan bog'lanadi)
       UserRegister.belongsTo(models.Users, { foreignKey: "user_id" });
     }
   }
-
+  
   UserRegister.init(
     {
       id: {
@@ -425,35 +432,43 @@ module.exports = (sequelize) => {
       },
       code: {
         type: DataTypes.STRING,
+        allowNull: false, // Kod bo'sh bo'lmasligi kerak
       },
       user_id: {
         type: DataTypes.UUID,
+        allowNull: false, // Foydalanuvchi ID bo'lishi shart
         references: {
           model: "Users",
           key: "id",
         },
       },
-      time: {
-        type: DataTypes.STRING,
+      expiration: {
+        type: DataTypes.DATE, // Kod muddati uchun to'g'ri tip (DATE)
+        allowNull: false,
       },
       status: {
         type: DataTypes.ENUM("active", "inactive"),
         defaultValue: "active",
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
         field: "updated_at",
+        defaultValue: DataTypes.NOW, // Yangilanish vaqti
       },
       createdAt: {
         type: DataTypes.DATE,
         field: "created_at",
+        defaultValue: DataTypes.NOW, // Yaratilgan vaqti
       },
     },
     {
       sequelize,
       tableName: "user_registers",
+      timestamps: true, // Sequelize avtomatik tarzda vaqt muhrlarini boshqaradi
     }
   );
+  
 
   Users.associate = (models) => {
     Users.hasOne(models.Driver);
