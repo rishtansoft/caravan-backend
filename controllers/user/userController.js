@@ -134,6 +134,9 @@ class UserControllers {
     try {
       const { user_id, phone_2, birthday, role } = req.body;
 
+      console.log(req.body);
+      
+
       const user = await Users.findOne({
         where: {
           id: user_id
