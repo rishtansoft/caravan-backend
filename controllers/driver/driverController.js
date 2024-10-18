@@ -600,6 +600,7 @@ class DriverControllers {
       return next(ApiError.internal("Error updating driver details " + error.message))
     }
   }
+
 }
 
 module.exports = new DriverControllers();

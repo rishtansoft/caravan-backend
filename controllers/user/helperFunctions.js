@@ -5,7 +5,7 @@ const NodeCache = require("node-cache");
 const cache = new NodeCache();
 
 class HelperFunction {
-  generateRandomCode(length = 6) {
+  generateRandomCode(length = 4) {
     const characters = "0123456789";
     let result = "";
 
