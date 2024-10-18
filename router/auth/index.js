@@ -8,12 +8,12 @@ const router = express.Router();
 router.post('/register/initial', userController.initialRegistration);
 router.post('/register/complete', userController.completeRegistration);
 router.post('/verify-phone', userController.verifyPhone);
+router.post("/resend-code", userController.resendVerification);
 
 // verify
 router.post("/send-code", driverControllers.userPasswordChangSendCode);
 router.post("/verify-code", driverControllers.userPasswordChangCode);
 router.post("/new-password", driverControllers.userPasswordReset);
-router.post("/resend-code", driverControllers.smsCodeResend);
 
 //  login routeri
 router.post("/login",  userController.login);
