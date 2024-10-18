@@ -424,7 +424,7 @@ class UserControllers {
           user_id,
           status: "active",
           expiration: {
-            [Op.lte]: new Date(),  
+            [Op.lte]: new Date(),
           },
         },
       });
@@ -433,9 +433,9 @@ class UserControllers {
         await userRegister.update({ status: "inactive" });
       }
 
-      const newCode = helperFunctions.generateRandomCode();  
+      const newCode = helperFunctions.generateRandomCode();
       const expirationTime = new Date();
-      expirationTime.setMinutes(expirationTime.getMinutes() + 5); 
+      expirationTime.setMinutes(expirationTime.getMinutes() + 5);
 
       await UserRegister.create({
         user_id: user.id,
@@ -453,6 +453,112 @@ class UserControllers {
       return next(ApiError.internal("Resend verification error: " + error.message));
     }
   }
+
+  async forgotPassword(req, res, next) {
+    try {
+      const { phone } = req.body;
+
+      const user = await Users.findOne({
+        where: { phone },
+      });
+
+      if (!user) {
+        return next(ApiError.badRequest("User with this phone number not found"));
+      }
+
+      const resetCode = helperFunctions.generateRandomCode();
+      const expiration = new Date();
+      expiration.setMinutes(expiration.getMinutes() + 1);
+
+      await UserRegister.create({
+        user_id: user.id,
+        code: resetCode.toString(),
+        expiration: expiration,
+        status: 'active',
+      });
+
+      console.log(`Password reset code sent to ${phone}: ${resetCode}`);
+
+      return res.json({
+        message: "Password reset code has been sent to your phone number",
+        code: resetCode
+      });
+
+    } catch (error) {
+      console.error("Forgot password error: ", error);
+      return next(ApiError.internal("Forgot password error: " + error.message));
+    }
+  }
+
+  async verifyResetCode(req, res, next) {
+    try {
+      const { phone, code } = req.body;
+
+      const user = await Users.findOne({
+        where: { phone },
+      });
+
+      if (!user) {
+        return next(ApiError.badRequest("User with this phone number not found"));
+      }
+
+      const userRegister = await UserRegister.findOne({
+        where: {
+          user_id: user.id,
+          code,
+          status: 'active',
+          expiration: {
+            [Op.gt]: new Date(),
+          },
+        },
+      });
+
+      if (!userRegister) {
+        return next(ApiError.badRequest("Invalid or expired reset code"));
+      }
+
+      return res.json({
+        message: "Reset code is valid. You can now reset your password.",
+        user_id: user.id,
+      });
+
+    } catch (error) {
+      console.error("Verification error: ", error);
+      return next(ApiError.internal("Verification error: " + error.message));
+    }
+  }
+
+  async resetPassword(req, res, next) {
+    try {
+      const { user_id, new_password, confirm_password } = req.body;
+
+      if (!new_password || !confirm_password) {
+        return next(ApiError.badRequest("New password and confirm password are required"));
+      }
+      if (new_password !== confirm_password) {
+        return next(ApiError.badRequest("Passwords do not match"));
+      }
+
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+
+      const hashedPassword = await bcrypt.hash(new_password, 10);
+
+      await user.update({ password: hashedPassword });
+
+      return res.json({
+        message: "Password has been reset successfully",
+      });
+
+    } catch (error) {
+      console.error("Reset password error: ", error);
+      return next(ApiError.internal("Reset password error: " + error.message));
+    }
+  }
+
+
 
 }
 

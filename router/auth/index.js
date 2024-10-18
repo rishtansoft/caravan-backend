@@ -10,6 +10,11 @@ router.post('/register/complete', userController.completeRegistration);
 router.post('/verify-phone', userController.verifyPhone);
 router.post("/resend-code", userController.resendVerification);
 
+// forgot password
+router.post("/forgot-password", userController.forgotPassword);
+router.post("/verify-reset-forgot", userController.verifyResetCode);
+router.post("/reset-password", userController.resetPassword);
+
 // verify
 router.post("/send-code", driverControllers.userPasswordChangSendCode);
 router.post("/verify-code", driverControllers.userPasswordChangCode);
