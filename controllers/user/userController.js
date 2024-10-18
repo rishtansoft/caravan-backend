@@ -134,7 +134,9 @@ class UserControllers {
     try {
       const { user_id, phone_2, birthday, role } = req.body;
 
-      // Foydalanuvchini bazadan olish
+      console.log(req.body);
+      
+
       const user = await Users.findOne({
         where: {
           id: user_id
@@ -192,9 +194,10 @@ class UserControllers {
       if (!birthday) {
         return next(ApiError.badRequest("Birthday was not entered"));
       }
-      if (!validateFun.validatePhoneNumber(phone_2)) {
-        return next(ApiError.badRequest("Phone number is not formatted correctly"));
-      }
+
+    if (phone_2 && !validateFun.validatePhoneNumber(phone_2)) {
+      return next(ApiError.badRequest("Phone number is not formatted correctly"));
+    }
 
       // Unik ID generatsiya qilish
       let uniqueId;
@@ -219,7 +222,7 @@ class UserControllers {
 
       // Foydalanuvchini yangilash va "confirm_phone" holatiga o'tkazish
       await user.update({
-        phone_2,
+        phone_2: phone_2 || null,
         birthday,
         role,
         unique_id: uniqueId, // Generatsiya qilingan unik raqam
