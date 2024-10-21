@@ -16,12 +16,18 @@ router.post("/verify-reset-forgot", userController.verifyResetCode);
 router.post("/reset-password", userController.resetPassword);
 
 
-//  login routeri
+//  login router
 router.post("/login",  userController.login);
 // router.post("/logout", driverControllers.userLogout);
 
 // check driver is full regisgtered
 router.post("/check-driver", userController.checkDriverInfo);
 router.get("/get-profile", protect, userController.getProfile);
+
+// update user main phone
+router.post("/request-update-phone", protect, userController.requestMainPhoneChange);
+
+// verify update user main phone
+router.post("/verify-update-phone", protect, userController.verifyMainPhoneChange);
 
 module.exports = router;

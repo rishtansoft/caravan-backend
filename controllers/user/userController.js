@@ -5,12 +5,13 @@ const { Op } = require("sequelize");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const helperFunctions = require("./helperFunctions");
+const utilFunctions = require('../../utils/index');
 require("dotenv").config();
 
 class UserControllers {
   async getProfile(req, res, next) {
     try {
-      const {user_id} = req.query;
+      const { user_id } = req.query;
       const user = await Users.findByPk(user_id, {
         attributes: [
           "id",
@@ -282,12 +283,12 @@ class UserControllers {
       await userRegister.update({ status: "inactive" });
 
       if (user.role === "driver") {
-        
+
         await Driver.create({
-          user_id: user.id,  
-          car_type: "unknown",  
+          user_id: user.id,
+          car_type: "unknown",
           name: `unknown`,
-          tex_pas_ser: "unknown", 
+          tex_pas_ser: "unknown",
           prava_ser: "unknown",
           tex_pas_num: "unknown",
           prava_num: "unknown",
@@ -567,6 +568,75 @@ class UserControllers {
     } catch (error) {
       console.error("Reset password error: ", error);
       return next(ApiError.internal("Reset password error: " + error.message));
+    }
+  }
+
+  async requestMainPhoneChange(req, res, next) {
+    try {
+      const { user_id, unique_id, new_phone } = req.body;
+
+      const user = await Users.findOne({ where: { id: user_id, unique_id } });
+      if (!user) {
+        return next(ApiError.internal("User not found"));
+      }
+
+      const verificationCode = Math.floor(1000 + Math.random() * 9000);
+      
+      const isPhoneValid = utilFunctions.validatePhoneNumber(new_phone);
+
+      if (!isPhoneValid) {
+        return next(ApiError.internal("Phone is not valid"));
+      }
+
+      await UserRegister.update(
+        { status: 'inactive' },
+        { where: { user_id, status: 'active' } }
+      );
+
+      await UserRegister.create({
+        user_id: user.id,
+        code: verificationCode,
+        status: 'active',
+        expiration: new Date(Date.now() + 10 * 60 * 300),
+      });
+
+      // await smsService.send(new_phone, `Your verification code is: ${verificationCode}`);
+
+      return res.json({ message: 'Verification code sent to new phone number', code: verificationCode });
+    } catch (error) {
+      console.error(error);
+      next(error); 
+    }
+  }
+
+  async verifyMainPhoneChange(req, res, next) {
+    try {
+      const { user_id, new_phone, sms_code } = req.body;
+
+      const record = await UserRegister.findOne({
+        where: {
+          user_id,
+          code: sms_code,
+          status: 'active',
+          expiration: { [Op.gt]: new Date() },
+        },
+      });
+
+      if (!record) {
+        return res.status(400).json({ message: 'Invalid or expired verification code' });
+      }
+
+      await Users.update(
+        { phone: new_phone },
+        { where: { id: user_id } }
+      );
+
+      await record.update({ status: 'inactive' });
+
+      return res.json({ message: 'Phone number updated successfully' });
+    } catch (error) {
+      console.error(error);
+      next(error);
     }
   }
 }

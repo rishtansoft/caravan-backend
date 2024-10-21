@@ -8,13 +8,12 @@ class UtilFunctions {
     }
 
     validatePhoneNumber(phoneNumber) {
-        // Telefon raqam +998 bilan boshlanib, keyingi 9 ta raqam kiritilishi kerak
-        const regex = /^\+998(9[0-9]{2})([0-9]{7})$/;
+        // Raqamning boshlanishi +998 bilan, keyin 93 kabi 9 bilan boshlangan 3ta raqam va 7ta qoldiq raqam
+        const regex = /^\+998([0-9]{2})([0-9]{7})$/;
         return regex.test(phoneNumber);
     }
 
     validateName(firstName) {
-        // Ism kamida 3 ta belgidan iborat bo'lishi va raqam bilan boshlanmasligi kerak
         const regex = /^[^\d][a-zA-Z]{2,}$/;
         return regex.test(firstName);
     }
