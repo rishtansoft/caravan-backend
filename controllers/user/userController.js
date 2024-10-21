@@ -10,8 +10,8 @@ require("dotenv").config();
 class UserControllers {
   async getProfile(req, res, next) {
     try {
-      const userId = req.user.id;
-      const user = await Users.findByPk(userId, {
+      const {user_id} = req.query;
+      const user = await Users.findByPk(user_id, {
         attributes: [
           "id",
           "firstname",
@@ -251,25 +251,22 @@ class UserControllers {
     try {
       const { user_id, code } = req.body;
 
-      // Foydalanuvchini ID bo'yicha olish
       const user = await Users.findByPk(user_id);
       if (!user) {
         return next(ApiError.badRequest("User not found"));
       }
 
-      // Foydalanuvchi "confirm_phone" holatida ekanligini tekshirish
       if (user.user_status !== "confirm_phone") {
         return next(ApiError.badRequest("The user is not in the phone confirmation stage"));
       }
 
-      // Foydalanuvchi registratsiyasi bo'yicha kodni tekshirish
       const userRegister = await UserRegister.findOne({
         where: {
           user_id,
           code,
           status: 'active',
           expiration: {
-            [Op.gt]: new Date(),  // Kod muddati tugamagan bo'lishi kerak
+            [Op.gt]: new Date(),
           },
         },
       });
@@ -278,26 +275,41 @@ class UserControllers {
         return next(ApiError.badRequest("Invalid or expired verification code"));
       }
 
-      // Foydalanuvchi holatini yangilash (tasdiqlangan deb belgilash)
       await user.update({
         user_status: "active",
       });
 
-      // Tasdiqlash kodi statusini "inactive" qilib yangilash
       await userRegister.update({ status: "inactive" });
 
-      // Sessiya yoki token generatsiya qilish (agar kerak bo'lsa)
-      // Bu qismda siz sessiya yoki JWT token yaratishingiz mumkin, agar foydalanuvchi tizimga kirganda token kerak bo'lsa.
+      if (user.role === "driver") {
+        
+        await Driver.create({
+          user_id: user.id,  
+          car_type: "unknown",  
+          name: `unknown`,
+          tex_pas_ser: "unknown", 
+          prava_ser: "unknown",
+          tex_pas_num: "unknown",
+          prava_num: "unknown",
+          car_img: "",
+          prava_img: "",
+          tex_pas_img: "",
+          driver_status: "offline",
+          is_approved: false,
+          blocked: false,
+        });
+      }
 
       return res.json({
         message: "Phone number verified successfully. You can now log in.",
-        unique_id: user.unique_id,  // Foydalanuvchi ID sini javobga qo'shish
+        unique_id: user.unique_id,
       });
     } catch (error) {
       console.error(error);
       return next(ApiError.internal("Phone verification error: " + error.message));
     }
   }
+
 
   async login(req, res, next) {
     try {
@@ -557,9 +569,6 @@ class UserControllers {
       return next(ApiError.internal("Reset password error: " + error.message));
     }
   }
-
-
-
 }
 
 module.exports = new UserControllers();

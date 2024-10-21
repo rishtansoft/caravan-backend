@@ -1,0 +1,92 @@
+[
+    {
+        "id": 14,
+        "title": "Labo",
+        "icon": "https://api.casva.uz/uploads/car_types/14_62ce426915f96.svg",
+        "max_weight": 700,
+        "dim_x": "2.15",
+        "dim_y": "1.15",
+        "dim_z": "1.35"
+    },
+    {
+        "id": 21,
+        "title": "Bongo",
+        "icon": "https://api.casva.uz/uploads/car_types/21_62ce427000ae0.svg",
+        "max_weight": 2000,
+        "dim_x": "2.85",
+        "dim_y": "1.75",
+        "dim_z": "1.7"
+    },
+    {
+        "id": 20,
+        "title": "Furgon",
+        "icon": "https://api.casva.uz/uploads/car_types/20_62ce427768009.svg",
+        "max_weight": 2500,
+        "dim_x": "3.4",
+        "dim_y": "1.65",
+        "dim_z": "1.9"
+    },
+    {
+        "id": 3,
+        "title": "ISUZU 5",
+        "icon": "https://api.casva.uz/uploads/car_types/3_62ce427e72603.svg",
+        "max_weight": 5000,
+        "dim_x": "4.8",
+        "dim_y": "2.05",
+        "dim_z": "1.92"
+    },
+    {
+        "id": 2,
+        "title": "ISUZU 10",
+        "icon": "https://api.casva.uz/uploads/car_types/2_63b7b0e4e8e09.svg",
+        "max_weight": 10000,
+        "dim_x": "6.9",
+        "dim_y": "2.4",
+        "dim_z": "2"
+    },
+    {
+        "id": 19,
+        "title": "Gruzovik",
+        "icon": "https://api.casva.uz/uploads/car_types/19_63634d69645c2.svg",
+        "max_weight": 15000,
+        "dim_x": "7",
+        "dim_y": "2.4",
+        "dim_z": "2.6"
+    },
+    {
+        "id": 6,
+        "title": "Fura Budka",
+        "icon": "https://api.casva.uz/uploads/car_types/6_63663b0922b4a.svg",
+        "max_weight": 25000,
+        "dim_x": "13.6",
+        "dim_y": "2.45",
+        "dim_z": "2.7"
+    },
+    {
+        "id": 4,
+        "title": "Tentovka",
+        "icon": "https://api.casva.uz/uploads/car_types/4_62ce4297ce44f.svg",
+        "max_weight": 25001,
+        "dim_x": "13.6",
+        "dim_y": "2.45",
+        "dim_z": "2.81"
+    },
+    {
+        "id": 5,
+        "title": "Shalanda",
+        "icon": "https://api.casva.uz/uploads/car_types/5_636637cff1cfd.svg",
+        "max_weight": 25001,
+        "dim_x": "13.6",
+        "dim_y": "2.45",
+        "dim_z": "2.99"
+    },
+    {
+        "id": 18,
+        "title": "Paravoz",
+        "icon": "https://api.casva.uz/uploads/car_types/18_62ce42acac7f6.svg",
+        "max_weight": 25000,
+        "dim_x": "13.6",
+        "dim_y": "2.45",
+        "dim_z": "3"
+    }
+]
