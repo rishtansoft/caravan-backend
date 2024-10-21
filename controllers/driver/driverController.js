@@ -1,5 +1,6 @@
-const { Users, Driver } = require("../../models/index");
+const { Users, Driver, CarType } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
+const utilFunctions = require('../../utils/index');
 
 class DriverControllers {
     async getProfile(req, res, next) {
@@ -66,26 +67,21 @@ class DriverControllers {
 
     async updateDriverProfile(req, res, next) {
         try {
-            const { user_id } = req.params;
+            const { user_id } = req.query;
+            console.log(71, user_id);
+            
             const {
                 firstname,
                 lastname,
                 email,
-                phone,
-                role,
-                user_status,
+                phone_2,
                 car_type,
-                name,
+                car_name: name,
                 tex_pas_ser,
                 prava_ser,
                 tex_pas_num,
-                prava_num,
-                car_img,
-                prava_img,
-                tex_pas_img,
-                driver_status,
+                prava_num
             } = req.body;
-
 
             const user = await Users.findByPk(user_id);
 
@@ -93,12 +89,10 @@ class DriverControllers {
                 return next(ApiError.badRequest("User not found"));
             }
 
-            // Foydalanuvchi driver bo'lishini tekshirish
             if (user.role !== "driver") {
                 return next(ApiError.badRequest("The user is not a driver"));
             }
 
-            // `Driver` jadvalidan foydalanuvchiga tegishli ma'lumotlarni olish
             const driverProfile = await Driver.findOne({
                 where: { user_id },
             });
@@ -107,31 +101,91 @@ class DriverControllers {
                 return next(ApiError.badRequest("Driver profile not found for this user"));
             }
 
-            // Foydalanuvchi ma'lumotlarini yangilash (kelgan fieldlar bo'yicha)
+            if (email) {
+                const isEmailValid = utilFunctions.validateEmail(email);
+                if (!isEmailValid) {
+                    return next(ApiError.badRequest("Email is not valid"));    
+                }
+            }
+
+            if (phone_2) {
+                const isPhone2Valid = utilFunctions.validatePhoneNumber(phone_2);
+                if (!isPhone2Valid) {
+                    return next(ApiError.badRequest("Phone number is not valid"));    
+                }
+            }
+
+            if (firstname) {
+                const isFirstNameValid = utilFunctions.validateName(firstname);
+                if (!isFirstNameValid) {
+                    return next(ApiError.badRequest("Firstname is not valid"));    
+                }
+            }
+
+            if (lastname) {
+                const isLastnameValid = utilFunctions.validateName(lastname);
+                if (!isLastnameValid) {
+                    return next(ApiError.badRequest("Lastname is not valid"));    
+                }
+            }
+
+            if (name) {
+                const isCarnameValid = utilFunctions.validateName(name);
+                if (!isCarnameValid) {
+                    return next(ApiError.badRequest("Car name is not valid"));    
+                }
+            }
+
+            if (tex_pas_ser) {
+                const isValidTexPassportSerialNumber = utilFunctions.validateTexPassportSeries(tex_pas_ser);
+                if (!isValidTexPassportSerialNumber) {
+                    return next(ApiError.badRequest("Tex passport is not valid"));    
+                }
+            }
+
+            if (tex_pas_num) {
+                const isValidTexPassportNumber = utilFunctions.validatePassportNumber(tex_pas_num);
+                if (!isValidTexPassportNumber) {
+                    return next(ApiError.badRequest("Tex passport is not valid"));    
+                }
+            }
+
+            if (prava_ser) {
+                const isValidTexPassportSerialNumber = utilFunctions.validatePravaPassportSeries(prava_ser);
+                if (!isValidTexPassportSerialNumber) {
+                    return next(ApiError.badRequest("Prava is not valid"));    
+                }
+            }
+
+            if (prava_num) {
+                const isValidTexPassportNumber = utilFunctions.validatePassportNumber(prava_num);
+                if (!isValidTexPassportNumber) {
+                    return next(ApiError.badRequest("Prava is not valid"));    
+                }
+            }
+
+            if (car_type) {
+                const isExist = await CarType.findByPk(car_type);
+                if (!isExist) {
+                    return next(ApiError.badRequest("Car type is not found")); 
+                }
+            }
+
             await user.update({
-                firstname: firstname || user.firstname, // Agar yangi qiymat kelgan bo'lsa, o'zgartir, aks holda eski qiymatni saqlab qol
+                firstname: firstname || user.firstname, 
                 lastname: lastname || user.lastname,
-                email: email || user.email,
-                phone: phone || user.phone,
-                role: role || user.role,
-                user_status: user_status || user.user_status,
+                email: email || user.email
             });
 
-            // Driver profilini yangilash
             await driverProfile.update({
                 car_type: car_type || driverProfile.car_type,
                 name: name || driverProfile.name,
                 tex_pas_ser: tex_pas_ser || driverProfile.tex_pas_ser,
                 prava_ser: prava_ser || driverProfile.prava_ser,
                 tex_pas_num: tex_pas_num || driverProfile.tex_pas_num,
-                prava_num: prava_num || driverProfile.prava_num,
-                car_img: car_img || driverProfile.car_img,
-                prava_img: prava_img || driverProfile.prava_img,
-                tex_pas_img: tex_pas_img || driverProfile.tex_pas_img,
-                driver_status: driver_status || driverProfile.driver_status,
+                prava_num: prava_num || driverProfile.prava_num
             });
 
-            // Yangi ma'lumotlarni qaytarish
             return res.json({
                 message: "Driver profile updated successfully",
                 user: {
@@ -162,9 +216,6 @@ class DriverControllers {
             return next(ApiError.internal("Error updating driver profile: " + error.message));
         }
     }
-
-
-
 }
 
 module.exports = new DriverControllers();
