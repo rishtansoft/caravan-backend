@@ -16,6 +16,9 @@ router.post("/forgot-password", userController.forgotPassword);
 router.post("/verify-reset-forgot", userController.verifyResetCode);
 router.post("/reset-password", userController.resetPassword);
 
+// code umri tugaganda ishlatiladi
+router.post("/resend-code-forgot", userController.resendResetForgotCode);
+
 
 //  login router
 router.post("/login",  userController.login);

@@ -574,6 +574,56 @@ class UserControllers {
     }
   }
 
+  async resendResetForgotCode(req, res, next) {
+    try {
+      const { phone } = req.body;
+
+      const user = await Users.findOne({
+        where: { phone },
+      });
+
+      if (!user) {
+        return next(ApiError.badRequest("User with this phone number not found"));
+      }
+
+      const lastResetCode = await UserRegister.findOne({
+        where: { user_id: user.id, status: 'active' },
+        order: [['expiration', 'DESC']],
+      });
+
+      if (lastResetCode) {
+        const currentTime = new Date();
+        if (currentTime < new Date(lastResetCode.expiration)) {
+          return res.json({
+            message: "A reset code has already been sent and is still valid.",
+          });
+        }
+      }
+
+      const resetCode = helperFunctions.generateRandomCode();
+      const expiration = new Date();
+      expiration.setMinutes(expiration.getMinutes() + 1);
+
+      await UserRegister.create({
+        user_id: user.id,
+        code: resetCode.toString(),
+        expiration: expiration,
+        status: 'active',
+      });
+
+      console.log(`New password reset code sent to ${phone}: ${resetCode}`);
+
+      return res.json({
+        message: "New password reset code has been sent to your phone number",
+        code: resetCode
+      });
+
+    } catch (error) {
+      console.error("Resend password reset code error: ", error);
+      return next(ApiError.internal("Resend password reset code error: " + error.message));
+    }
+  }
+
   async requestMainPhoneChange(req, res, next) {
     try {
       const { user_id, unique_id, new_phone } = req.body;
@@ -697,30 +747,30 @@ class UserControllers {
     }
   }
 
-  async  replaceAvatar(req, res, next) {
+  async replaceAvatar(req, res, next) {
     try {
       const { user_id } = req.query;
       const file = req.file;
-        
+
       if (!file || !user_id) {
         return res.status(400).json({ message: 'File and user_id are required' });
       }
-  
+
       const user = await Users.findByPk(user_id);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      
+
       const oldFileUrl = user.user_img;
-      
+
       const newFileUrl = await uploadFile(file, configService);
-  
+
       if (oldFileUrl) {
         await deleteFile(oldFileUrl, configService);
       }
-  
+
       await user.update({ user_img: newFileUrl });
-  
+
       return res.json({
         message: 'Avatar updated successfully',
         new_image_url: newFileUrl,
@@ -730,7 +780,7 @@ class UserControllers {
       return res.status(500).json({ message: 'Error replacing avatar', error: error.message });
     }
   }
-  
+
 }
 
 module.exports = new UserControllers();
