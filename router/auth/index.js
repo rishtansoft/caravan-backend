@@ -34,6 +34,9 @@ router.post("/request-update-phone", protect, userController.requestMainPhoneCha
 // verify update user main phone
 router.post("/verify-update-phone", protect, userController.verifyMainPhoneChange);
 
+// verify update user main phone
+router.post("/resend-code-update-phone", protect, userController.resendVerificationCodeChangePhone);
+
 // upload user image
 router.post('/upload-profile-picture', protect, upload.single('file'), userController.uploadUserProfilePicture);
 

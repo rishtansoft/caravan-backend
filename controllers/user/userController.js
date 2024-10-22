@@ -666,14 +666,19 @@ class UserControllers {
     try {
       const { user_id, new_phone, sms_code } = req.body;
 
+      console.log(669, user_id, new_phone, sms_code);
+
       const record = await UserRegister.findOne({
         where: {
           user_id,
-          code: sms_code,
+          code: String(sms_code),
           status: 'active',
           expiration: { [Op.gt]: new Date() },
         },
       });
+
+      console.log(678, record);
+
 
       if (!record) {
         return res.status(400).json({ message: 'Invalid or expired verification code' });
@@ -690,6 +695,51 @@ class UserControllers {
     } catch (error) {
       console.error(error);
       next(error);
+    }
+  }
+
+  async resendVerificationCodeChangePhone(req, res, next) {
+    try {
+      const { user_id, new_phone } = req.body;
+
+      // Avval mavjud bo'lgan kodni tekshirish
+      const existingRecord = await UserRegister.findOne({
+        where: {
+          user_id,
+          status: 'active',
+          expiration: { [Op.gt]: new Date() },  // Hozirgi vaqt tugagan bo'lsa
+        },
+      });
+
+      // Agar kod hali ham amalda bo'lsa, qayta yuborish mumkin emas
+      if (existingRecord) {
+        return res.status(400).json({ message: 'Verification code is still valid. Please wait until it expires.' });
+      }
+
+      // Yangi kod yaratish
+      const newCode = helperFunctions.generateRandomCode();
+      const expiration = new Date();
+      expiration.setMinutes(expiration.getMinutes() + 1); // 1 daqiqa amal qilish muddati
+
+      // Yangi kodni saqlash
+      await UserRegister.create({
+        user_id: user_id,
+        code: newCode.toString(),
+        expiration: expiration,
+        status: 'active',
+      });
+
+      // Yangi kodni telefon raqamga yuborish (yoki console.log orqali chiqarish)
+      console.log(`New verification code sent to ${new_phone}: ${newCode}`);
+
+      return res.json({
+        message: 'New verification code has been sent to your phone number.',
+        code: newCode, // Productionda kodni response'ga qaytarish maqsadga muvofiq emas. Bu faqat debugging uchun.
+      });
+
+    } catch (error) {
+      console.error("Error resending verification code: ", error);
+      return next(ApiError.internal("Error resending verification code: " + error.message));
     }
   }
 
