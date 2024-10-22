@@ -701,37 +701,24 @@ class UserControllers {
     try {
       const { user_id } = req.query;
       const file = req.file;
-
-      console.log(705, user_id, req.file);
         
       if (!file || !user_id) {
         return res.status(400).json({ message: 'File and user_id are required' });
       }
   
-      // Userni olish
       const user = await Users.findByPk(user_id);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
       
-      // Eski fayl URL'sini olish
       const oldFileUrl = user.user_img;
       
-      // Yangi faylni yuklash
       const newFileUrl = await uploadFile(file, configService);
   
-      // Eski faylni o'chirish
       if (oldFileUrl) {
-
-        // Fayl nomini URL'dan ajratib olish
-        const oldFileKey = oldFileUrl.split('/').slice(-2).join('/');
-
-        console.log(729, oldFileKey);
-        
-        await deleteFile(oldFileKey, configService);
+        await deleteFile(oldFileUrl, configService);
       }
   
-      // Users jadvalini yangilash
       await user.update({ user_img: newFileUrl });
   
       return res.json({

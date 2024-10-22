@@ -84,7 +84,7 @@ class UtilFunctions {
 
     async deleteFile(fileUrl, configService) {
         try {
-            const fileName = fileUrl;
+            const fileName = fileUrl.split(`${configService.get('S3_ENDPOINT')}/${configService.get('S3_BUCKET_NAME')}/`)[1];
             
             const s3Client = new S3Client({
                 region: configService.get('S3_REGION'),
@@ -102,8 +102,8 @@ class UtilFunctions {
             };
     
             const command = new DeleteObjectCommand(deleteParams);
-            const response = await s3Client.send(command);  // Faylni o'chirishni kutamiz
-    
+            const response = await s3Client.send(command);  
+            
             return {
                 message: 'File deleted successfully',
                 response,
