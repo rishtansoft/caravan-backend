@@ -8,6 +8,9 @@ const helperFunctions = require("./helperFunctions");
 const utilFunctions = require('../../utils/index');
 require("dotenv").config();
 
+const configService = require('../../config/configureService');
+const { uploadFile, deleteFile } = require('../../utils/index');
+
 class UserControllers {
   async getProfile(req, res, next) {
     try {
@@ -581,7 +584,7 @@ class UserControllers {
       }
 
       const verificationCode = Math.floor(1000 + Math.random() * 9000);
-      
+
       const isPhoneValid = utilFunctions.validatePhoneNumber(new_phone);
 
       if (!isPhoneValid) {
@@ -605,7 +608,7 @@ class UserControllers {
       return res.json({ message: 'Verification code sent to new phone number', code: verificationCode });
     } catch (error) {
       console.error(error);
-      next(error); 
+      next(error);
     }
   }
 
@@ -639,6 +642,108 @@ class UserControllers {
       next(error);
     }
   }
+
+  async uploadUserProfilePicture(req, res, next) {
+    try {
+      const { user_id } = req.query;
+      const file = req.file;
+
+      // Foydalanuvchini tekshirish
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Rasmni S3 ga yuklash
+      const fileUrl = await uploadFile(file, configService);
+
+      // Foydalanuvchining profile picture ma'lumotini yangilash
+      await user.update({ user_img: fileUrl });
+
+      return res.json({ message: 'Profile picture uploaded successfully', profile_picture: fileUrl });
+    } catch (error) {
+      console.error(error);
+      next(error);  // Xatolikni ushlash
+    }
+  }
+
+  async deleteAvatar(req, res, next) {
+    try {
+      const { user_id, fileUrl } = req.body;  // O'chiriladigan fayl URL'si va user_id
+
+      if (!fileUrl) {
+        return res.status(400).json({ message: 'File URL is required' });
+      }
+
+      // Faylni S3'dan o'chirish
+      const result = await deleteFile(fileUrl, configService);
+
+      // Users jadvalidan user_img'ni o'chirish
+      const user = await Users.findByPk(user_id);  // user_id bo'yicha foydalanuvchini topamiz
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.user_img !== fileUrl) {
+        return res.status(400).json({ message: 'Provided file URL does not match user image' });
+      }
+
+      // Userning user_img ni null qilib yangilaymiz
+      await user.update({ user_img: null });
+
+      return res.json({ message: 'File deleted successfully and user image removed' });
+    } catch (error) {
+      return res.status(500).json({ message: 'Error deleting file', error: error.message });
+    }
+  }
+
+  async  replaceAvatar(req, res, next) {
+    try {
+      const { user_id } = req.query;
+      const file = req.file;
+
+      console.log(705, user_id, req.file);
+        
+      if (!file || !user_id) {
+        return res.status(400).json({ message: 'File and user_id are required' });
+      }
+  
+      // Userni olish
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Eski fayl URL'sini olish
+      const oldFileUrl = user.user_img;
+      
+      // Yangi faylni yuklash
+      const newFileUrl = await uploadFile(file, configService);
+  
+      // Eski faylni o'chirish
+      if (oldFileUrl) {
+
+        // Fayl nomini URL'dan ajratib olish
+        const oldFileKey = oldFileUrl.split('/').slice(-2).join('/');
+
+        console.log(729, oldFileKey);
+        
+        await deleteFile(oldFileKey, configService);
+      }
+  
+      // Users jadvalini yangilash
+      await user.update({ user_img: newFileUrl });
+  
+      return res.json({
+        message: 'Avatar updated successfully',
+        new_image_url: newFileUrl,
+      });
+    } catch (error) {
+      console.error('Error replacing avatar:', error);
+      return res.status(500).json({ message: 'Error replacing avatar', error: error.message });
+    }
+  }
+  
 }
 
 module.exports = new UserControllers();

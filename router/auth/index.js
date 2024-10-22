@@ -1,6 +1,7 @@
 const express = require("express");
 const protect = require("../../middleware/authMiddleware");
 const userController = require("../../controllers/user/userController");
+const upload = require('../../utils/upload'); 
 
 const router = express.Router();
 
@@ -29,5 +30,15 @@ router.post("/request-update-phone", protect, userController.requestMainPhoneCha
 
 // verify update user main phone
 router.post("/verify-update-phone", protect, userController.verifyMainPhoneChange);
+
+// upload user image
+router.post('/upload-profile-picture', protect, upload.single('file'), userController.uploadUserProfilePicture);
+
+// Rasmni o'chirish API
+router.post('/delete-avatar',protect, userController.deleteAvatar);
+
+// Rasmni almashtirish
+router.post('/replace-avatar',protect, upload.single('file'), userController.replaceAvatar);
+
 
 module.exports = router;
