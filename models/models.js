@@ -109,7 +109,6 @@ module.exports = (sequelize) => {
     }
   );
 
-  // Driver modeli
   class Driver extends BaseModel {
     static associate(models) {
       Driver.belongsTo(models.Users, {
@@ -117,14 +116,19 @@ module.exports = (sequelize) => {
         targetKey: "id",
       });
       Driver.hasMany(models.Assignment, { foreignKey: "driver_id" });
+      Driver.belongsTo(CarType, { foreignKey: 'car_type_id', as: 'carType' });
     }
   }
 
   Driver.init(
     {
-      car_type: {
-        type: DataTypes.STRING,
-        allowNull: false,
+      car_type_id: {  
+        type: DataTypes.UUID,
+        references: {
+          model: "CarType",
+          key: 'id',
+        },
+        allowNull: true,
       },
       name: {
         type: DataTypes.STRING,
@@ -180,6 +184,45 @@ module.exports = (sequelize) => {
     {
       sequelize,
       tableName: "Driver", // jadval nomini majburlash
+    }
+  );
+
+  class CarType extends BaseModel {
+    static associate(models) {
+      
+    }
+  }
+
+  CarType.init(
+    {
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      icon: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      max_weight: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      dim_x: {
+        type: DataTypes.DECIMAL(10, 2), 
+        allowNull: false,
+      },
+      dim_y: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      dim_z: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+    },
+    {
+      sequelize,
+      tableName: "CarType", 
     }
   );
 
@@ -497,5 +540,6 @@ module.exports = (sequelize) => {
     LocationCron,
     Notification,
     UserRegister,
+    CarType
   };
 };

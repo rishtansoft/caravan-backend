@@ -1,605 +1,414 @@
-const { Users, Driver, UserRegister } = require("../../models/index");
+const { Users, Driver, CarType } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const { Op } = require("sequelize");
-const validate = require("../user/validateFun");
-const helperFunctions = require("../user/helperFunctions");
-const generateJwt = ({ id, role, phone }) => {
-  return jwt.sign({ id, phone: phone, role: role }, process.env.SECRET_KEY, {
-    expiresIn: "1440m",
-  });
-};
+const utilFunctions = require('../../utils/index');
+
+const configService = require('../../config/configureService');
+const { uploadFile, deleteFile } = require('../../utils/index');
 
 class DriverControllers {
-  async userAdd(req, res, next) {
-    try {
-      const {
-        lastname,
-        firstname,
-        phone,
-        phone_2,
-        password,
-        password_rep,
-        role,
-        // Add driver-specific fields
-        car_type,
-        name,
-        tex_pas_ser,
-        prava_ser,
-        tex_pas_num,
-        prava_num,
-      } = req.body;
+    async getProfile(req, res, next) {
+        try {
+            const { user_id } = req.query;
 
-      // Validate inputs
-      if (!lastname) {
-        return next(ApiError.badRequest("Lastname was not entered"));
-      }
-      if (!firstname) {
-        return next(ApiError.badRequest("Firstname was not entered"));
-      }
-      if (!role) {
-        return next(ApiError.badRequest("role was not entered"));
-      }
+            if (!user_id) {
+                return next(ApiError.badRequest("User id not found"));
+            }
 
-      if (!password || !password_rep || password !== password_rep) {
-        return next(
-          ApiError.badRequest("Passwords do not match or are not provided")
-        );
-      }
+            const user = await Users.findByPk(user_id);
 
-      if (!validate.validatePhoneNumber(phone)) {
-        return next(
-          ApiError.badRequest("Phone number is not formatted correctly")
-        );
-      }
+            if (!user) {
+                return next(ApiError.badRequest("User not found"));
+            }
 
-      const existingUser = await Users.findOne({
-        where: {
-          phone: phone,
-          [Op.or]: [
-            { user_status: "active" },
-            { user_status: "pending" },
-            { user_status: "confirm_phone" },
-          ],
-        },
-      });
+            if (user.role !== "driver") {
+                return next(ApiError.badRequest("The user is not a driver"));
+            }
 
-      if (existingUser) {
-        return next(
-          ApiError.badRequest("This phone number is already registered.")
-        );
-      }
+            const driverProfile = await Driver.findOne({
+                where: { user_id },
+            });
 
-      const smsCode = helperFunctions.generateRandomCode();
+            if (!driverProfile) {
+                return next(ApiError.badRequest("Driver profile not found for this user"));
+            }
 
-      // Create a new user
-      const newUser = await Users.create({
-        lastname,
-        firstname,
-        phone,
-        phone_2,
-        password,
-        verification_code: smsCode,
-        role,
-        user_status: "confirm_phone",
-      });
-
-
-        // If the role is 'driver', create a driver record
-      let newDriver;
-      if (role === 'driver') {
-        if (!car_type || !name || !tex_pas_ser || !prava_ser || !tex_pas_num || !prava_num) {
-          return next(ApiError.badRequest("Missing required driver information"));
+            return res.json({
+                user: {
+                    id: user.id,
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role,
+                    user_status: user.user_status,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt,
+                },
+                driver: {
+                    id: driverProfile.id,
+                    car_type: driverProfile.car_type,
+                    name: driverProfile.name,
+                    tex_pas_ser: driverProfile.tex_pas_ser,
+                    prava_ser: driverProfile.prava_ser,
+                    tex_pas_num: driverProfile.tex_pas_num,
+                    prava_num: driverProfile.prava_num,
+                    car_img: driverProfile.car_img,
+                    prava_img: driverProfile.prava_img,
+                    tex_pas_img: driverProfile.tex_pas_img,
+                    driver_status: driverProfile.driver_status,
+                    is_approved: driverProfile.is_approved,
+                    blocked: driverProfile.blocked,
+                    createdAt: driverProfile.createdAt,
+                    updatedAt: driverProfile.updatedAt,
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            return next(ApiError.internal("Error fetching driver profile: " + error.message));
         }
-        newDriver = await Driver.create({
-          user_id: newUser.id,
-          car_type,
-          name,
-          tex_pas_ser,
-          prava_ser,
-          tex_pas_num,
-          prava_num,
-        });
-      }
-
-
-      // Save the verification code for the user
-      const userReg = await UserRegister.create({
-        code: smsCode,
-        user_id: newUser.id,
-      });
-
-      // Return success response
-      return res.json({
-        code: smsCode,
-        id: userReg.id,
-        phone: phone,
-        ur_id: newUser.id,
-      });
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return next(
-          ApiError.badRequest("This phone number is already registered...")
-        );
-      }
-      console.log(error.stack);
-      return next(
-        ApiError.badRequest("User/Driver adding error: " + error.message)
-      );
     }
-  }
 
-  async user2Add(req, res, next) {
-    try {
-      const {
-        car_type,
-        name,
-        user_id,
-        tex_pas_ser,
-        tex_pas_num,
-        prava_ser,
-        prava_num,
-      } = req.body;
+    async updateDriverProfile(req, res, next) {
+        try {
+            const { user_id } = req.query;
+            console.log(71, user_id);
 
-      console.log(req.body);
+            const {
+                firstname,
+                lastname,
+                email,
+                phone_2,
+                car_type,
+                car_name: name,
+                tex_pas_ser,
+                prava_ser,
+                tex_pas_num,
+                prava_num
+            } = req.body;
 
-      const texPas_img =
-        req.files && req.files["tex_pas_img"]
-          ? req.files["tex_pas_img"][0].path
-          : null;
-      const prava_img =
-        req.files && req.files["prava_img"]
-          ? req.files["prava_img"][0].path
-          : null;
-      const car_img =
-        req.files && req.files["car_img"] ? req.files["car_img"][0].path : null;
+            const user = await Users.findByPk(user_id);
 
-      // Validate required fields
-      if (!car_type)
-        return next(ApiError.badRequest("car_type was not entered"));
-      if (!name) return next(ApiError.badRequest("name was not entered"));
-      if (!user_id) return next(ApiError.badRequest("user_id was not entered"));
-      if (!tex_pas_ser)
-        return next(ApiError.badRequest("tex_pas_ser was not entered"));
-      if (!prava_num)
-        return next(ApiError.badRequest("prava_num was not entered"));
-      if (!prava_ser)
-        return next(ApiError.badRequest("prava_ser was not entered"));
+            if (!user) {
+                return next(ApiError.badRequest("User not found"));
+            }
 
-      // Create the driver
-      const driver = await Driver.create({
-        car_type,
-        name,
-        user_id,
-        tex_pas_ser,
-        tex_pas_num,
-        prava_ser,
-        prava_num,
-        tex_pas_img: texPas_img,
-        prava_img: prava_img,
-        car_img: car_img,
-      });
+            if (user.role !== "driver") {
+                return next(ApiError.badRequest("The user is not a driver"));
+            }
 
-      return res.json({
-        id: driver.id,
-        user_id: driver.user_id,
-      });
-    } catch (error) {
-      console.log(error.stack);
-      return next(
-        ApiError.badRequest("User during driver add error:  " + error.message)
-      );
-    }
-  }
+            const driverProfile = await Driver.findOne({
+                where: { user_id },
+            });
 
-  async userLoadAdd(req, res, next) {
-    try {
-      const {
-        lastname,
-        firstname,
-        phone,
-        birthday,
-        password,
-        password_rep,
-        address,
-      } = req.body;
-      const user_img = req.files["user_img"] ? req.files["user_img"][0] : false;
-      if (!lastname) {
-        return next(ApiError.badRequest("lastname was not entered"));
-      }
-      if (!firstname) {
-        return next(ApiError.badRequest("firstname was not entered"));
-      }
-      if (!address) {
-        return next(ApiError.badRequest("address was not entered"));
-      }
-      if (!phone) {
-        return next(ApiError.badRequest("phone was not entered"));
-      } else {
-        const user_driver = await Users.findOne({
-          where: {
-            phone: phone,
-            [Op.or]: [{ status: "active" }, { status: "pending" }],
-          },
-        });
-        if (user_driver) {
-          return next(
-            ApiError.badRequest("This phone number is already registered")
-          );
+            if (!driverProfile) {
+                return next(ApiError.badRequest("Driver profile not found for this user"));
+            }
+
+            if (email) {
+                const isEmailValid = utilFunctions.validateEmail(email);
+                if (!isEmailValid) {
+                    return next(ApiError.badRequest("Email is not valid"));
+                }
+            }
+
+            if (phone_2) {
+                const isPhone2Valid = utilFunctions.validatePhoneNumber(phone_2);
+                if (!isPhone2Valid) {
+                    return next(ApiError.badRequest("Phone number is not valid"));
+                }
+            }
+
+            if (firstname) {
+                const isFirstNameValid = utilFunctions.validateName(firstname);
+                if (!isFirstNameValid) {
+                    return next(ApiError.badRequest("Firstname is not valid"));
+                }
+            }
+
+            if (lastname) {
+                const isLastnameValid = utilFunctions.validateName(lastname);
+                if (!isLastnameValid) {
+                    return next(ApiError.badRequest("Lastname is not valid"));
+                }
+            }
+
+            if (name) {
+                const isCarnameValid = utilFunctions.validateName(name);
+                if (!isCarnameValid) {
+                    return next(ApiError.badRequest("Car name is not valid"));
+                }
+            }
+
+            if (tex_pas_ser) {
+                const isValidTexPassportSerialNumber = utilFunctions.validateTexPassportSeries(tex_pas_ser);
+                if (!isValidTexPassportSerialNumber) {
+                    return next(ApiError.badRequest("Tex passport is not valid"));
+                }
+            }
+
+            if (tex_pas_num) {
+                const isValidTexPassportNumber = utilFunctions.validatePassportNumber(tex_pas_num);
+                if (!isValidTexPassportNumber) {
+                    return next(ApiError.badRequest("Tex passport is not valid"));
+                }
+            }
+
+            if (prava_ser) {
+                const isValidTexPassportSerialNumber = utilFunctions.validatePravaPassportSeries(prava_ser);
+                if (!isValidTexPassportSerialNumber) {
+                    return next(ApiError.badRequest("Prava is not valid"));
+                }
+            }
+
+            if (prava_num) {
+                const isValidTexPassportNumber = utilFunctions.validatePassportNumber(prava_num);
+                if (!isValidTexPassportNumber) {
+                    return next(ApiError.badRequest("Prava is not valid"));
+                }
+            }
+
+            if (car_type) {
+                const isExist = await CarType.findByPk(car_type);
+                if (!isExist) {
+                    return next(ApiError.badRequest("Car type is not found"));
+                }
+            }
+
+            await user.update({
+                firstname: firstname || user.firstname,
+                lastname: lastname || user.lastname,
+                email: email || user.email
+            });
+
+            await driverProfile.update({
+                car_type: car_type || driverProfile.car_type,
+                name: name || driverProfile.name,
+                tex_pas_ser: tex_pas_ser || driverProfile.tex_pas_ser,
+                prava_ser: prava_ser || driverProfile.prava_ser,
+                tex_pas_num: tex_pas_num || driverProfile.tex_pas_num,
+                prava_num: prava_num || driverProfile.prava_num
+            });
+
+            return res.json({
+                message: "Driver profile updated successfully",
+                user: {
+                    id: user.id,
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role,
+                    user_status: user.user_status,
+                },
+                driver: {
+                    id: driverProfile.id,
+                    car_type: driverProfile.car_type,
+                    name: driverProfile.name,
+                    tex_pas_ser: driverProfile.tex_pas_ser,
+                    prava_ser: driverProfile.prava_ser,
+                    tex_pas_num: driverProfile.tex_pas_num,
+                    prava_num: driverProfile.prava_num,
+                    car_img: driverProfile.car_img,
+                    prava_img: driverProfile.prava_img,
+                    tex_pas_img: driverProfile.tex_pas_img,
+                    driver_status: driverProfile.driver_status,
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            return next(ApiError.internal("Error updating driver profile: " + error.message));
         }
-      }
-      if (birthday && !validate.isDate(birthday)) {
-        return next(
-          ApiError.badRequest("The birthday value was entered incorrectly")
-        );
-      }
-      if (!password || !password_rep || password != password_rep) {
-        return next(
-          ApiError.badRequest(
-            "The password value was entered incorrectly. Please check and login again"
-          )
-        );
-      }
-      if (user_img && !validate.is_img(user_img)) {
-        return next(ApiError.badRequest("prava was not entered"));
-      }
-      const user_imgFormat = user_img
-        ? user_img.buffer.toString("base64")
-        : null;
-      const smsCode = helperFunctions.generateRandomCode();
-      const user_driver = await Users.create({
-        password: password,
-        lastname: lastname,
-        firstname: firstname,
-        phone: phone,
-        birthday: password,
-        user_img: user_imgFormat,
-        address: address ? address : "",
-        role: "cargo_owner",
-      });
-
-      const userReg = await UserRegister.create({
-        code: smsCode,
-        user_id: user_driver.id,
-      });
-
-      return res.json({
-        code: smsCode,
-        id: userReg.id,
-      });
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest("User cargo owner add error"));
-    }
-  }
-
-  async smsCodeResed(req, res, next) {
-    try {
-      // const
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest(error));
-    }
-  }
-
-  async userRegisterActive(req, res, next) {
-    try {
-      const { id, code } = req.body;
-      if (!id || !validate.isValidUUID(id)) {
-        return next(
-          ApiError.badRequest("The id value was entered incorrectly")
-        );
-      }
-
-      const userReg = await UserRegister.findOne({
-        where: {
-          status: "active",
-          id: id,
-        },
-      });
-
-      if (!userReg) {
-        return next(
-          ApiError.badRequest("The id value was entered incorrectly")
-        );
-      }
-
-      if (!code || !validate.validateCode(code) || code != userReg.code) {
-        return next(
-          ApiError.badRequest("The sms code value was entered incorrectly")
-        );
-      }
-
-      const user = await Users.findOne({
-        where: {
-          status: "confirm_phone",
-          id: userReg.user_id,
-        },
-      });
-
-      const userID = await helperFunctions.generateUniqueUserId();
-
-      user.status = "pending";
-      user.userid = userID;
-      userReg.status = "inactive";
-      await user.save();
-      await userReg.save();
-
-      const resData = {
-        id: user.id,
-        role: user.role,
-        user_reg: true,
-      };
-
-      return res.json(resData);
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest(error));
-    }
-  }
-
-  async userLogin(req, res, next) {
-    try {
-      const { phone, password } = req.body;
-
-      if (!phone) {
-        return next(ApiError.badRequest("Phone was not entered"));
-      }
-
-      if (!password) {
-        return next(
-          ApiError.badRequest(
-            "The password value was entered incorrectly. Please check and login again"
-          )
-        );
-      }
-
-      const user = await Users.findOne({
-        where: {
-          phone: phone,
-          [Op.or]: [{ status: "active" }, { user_status: "confirm_phone" }],
-        },
-      });
-
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        return next(
-          ApiError.badRequest("The password was entered incorrectly")
-        );
-      }
-
-      if (!user) {
-        return next(ApiError.badRequest("User not found"));
-      }
-
-      if (user.status === "pending") {
-        const smsCode = helperFunctions.generateRandomCode();
-        const userReg = await UserRegister.create({
-          code: smsCode,
-          user_id: user.id,
-        });
-        return res.json({
-          code: smsCode,
-          id: userReg.id,
-          user_reg: false,
-        });
-      } else {
-        const token = generateJwt({
-          id: user.id,
-          phone: user.phone,
-          role: user.role,
-        });
-
-        return res.json({
-          user_reg: true,
-          token: token,
-          id: user.id,
-          role: user.role,
-        });
-      }
-    } catch (error) {
-      console.log("Error details:", error);
-      return next(ApiError.badRequest("User login error: " + error.messagee));
-    }
-  }
-
-  // code un tel
-  async userPasswordChangSendCode(req, res, next) {
-    try {
-      const { phone } = req.body;
-      if (!phone) {
-        return next(ApiError.badRequest("phone was not entered"));
-      }
-      const user = await Users.findOne({
-        where: {
-          status: "active",
-          phone: phone,
-        },
-      });
-
-      if (!user) {
-        return next(ApiError.badRequest("User not found"));
-      }
-      const smsCode = helperFunctions.generateRandomCode();
-      console.log(smsCode);
-      const userReg = await UserRegister.create({
-        code: smsCode,
-        user_id: user.id,
-      });
-      console.log(userReg);
-
-      return res.json({
-        code: smsCode,
-        id: userReg.id,
-        message: "SMS code has been sent.",
-      });
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest(error));
-    }
-  }
-
-  // coddeni tekwiriw
-  async userPasswordChangCode(req, res, next) {
-    try {
-      console.log(req);
-
-      const { id, code } = req.body;
-      if (!id || !validate.isValidUUID(id)) {
-        return next(
-          ApiError.badRequest("The id value was entered incorrectly")
-        );
-      }
-
-      const userReg = await UserRegister.findOne({
-        where: {
-          status: "active",
-          id: id,
-        },
-      });
-
-      if (!userReg) {
-        return next(
-          ApiError.badRequest("The id value was entered incorrectly")
-        );
-      }
-
-      if (!code || !validate.validateCode(code) || code != userReg.code) {
-        return next(
-          ApiError.badRequest("The sms code value was entered incorrectly")
-        );
-      }
-
-      const user = await Users.findOne({
-        where: {
-          id: userReg.user_id,
-        },
-      });
-
-      userReg.status = "inactive";
-      await userReg.save();
-
-      const resData = {
-        id: user.id,
-        message: "SMS verified. You can now reset your password.",
-        user_pasword_update: true,
-      };
-
-      return res.json(resData);
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest(error));
-    }
-  }
-
-  // yangi parol qo'yiw
-  async userPasswordReset(req, res, next) {
-    try {
-      const { id, newPassword, newPasswordRepeat } = req.body;
-      if (!newPassword || newPassword !== newPasswordRepeat) {
-        return next(ApiError.badRequest("Passwords do not match"));
-      }
-
-      const user = await Users.findOne({
-        where: { id: id },
-      });
-
-      if (!user) {
-        return next(ApiError.badRequest("User not found"));
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
-      user.password = hashedPassword;
-      await user.save();
-
-      return res.json({
-        message: "Password reset successful",
-        id: user.id,
-      });
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest("Error resetting password"));
-    }
-  }
-
-  // yangi sms code oliw
-  async smsCodeResend(req, res, next) {
-    try {
-      const { phone } = req.body;
-      if (!phone) {
-        return next(ApiError.badRequest("Phone was not entered"));
-      }
-
-      const user = await Users.findOne({
-        where: { status: "active", phone: phone },
-      });
-
-      if (!user) {
-        return next(ApiError.badRequest("User not found"));
-      }
-
-      const smsCode = helperFunctions.generateRandomCode();
-      const userReg = await UserRegister.create({
-        code: smsCode,
-        user_id: user.id,
-      });
-
-      return res.json({
-        code: smsCode,
-        message: "New SMS code has been sent.",
-      });
-    } catch (error) {
-      console.log(error.stack);
-      return next(ApiError.badRequest("Error resending SMS code"));
-    }
-  }
-
-  async userLogout(req, res, next) {
-    try {
-      res.clearCookie("token");
-      return res.status(200).json({ message: "Successfully logged out" });
-    } catch (error) {
-      next(ApiError.internal("Error logging out: " + error.message));
-    }
-  }
-
-  async updateDriverDetails(req, res, next) {
-    try {
-
-    const { car_type, name, tex_pas_ser, prava_ser, tex_pas_num, prava_num } = req.body;
-    const userId = req.user.id; 
-
-    const user = await Users.findByPk(userId);
-    if(!user || user.role !== "driver") {
-      return next(ApiError.badRequest("User is not a driver" ))
     }
 
-    let driver = await Driver.findOne({where : {
-      user_id:  userId
-    }})
-
-     if (driver) {
-      await driver.update({ car_type, name, tex_pas_ser, prava_ser, tex_pas_num, prava_num });
-    } else {
-      driver = await Driver.create({
-        user_id: userId,
-        car_type,
-        name,
-        tex_pas_ser,
-        prava_ser,
-        tex_pas_num,
-        prava_num,
-      });
+    // Tex passport image
+    async uploadTexPassportImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+            const file = req.file;  
+    
+            if (!file || !user_id) {
+                return res.status(400).json({ message: 'User ID and file are required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const fileUrl = await uploadFile(file, configService);
+    
+            await driver.update({ tex_pas_img: fileUrl });
+    
+            return res.json({
+                message: 'Technical passport image uploaded successfully',
+                tex_pas_img: fileUrl
+            });
+        } catch (error) {
+            console.error('Error uploading technical passport image:', error);
+            next(error);  
+        }
     }
 
-     return res.json({ message: "Driver details updated successfully", driver_id: driver.id });
-      
-    } catch (error) {
-      console.log("Error during driver update " + error.message);
-      return next(ApiError.internal("Error updating driver details " + error.message))
+    async deleteTexPassportImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+    
+            if (!user_id) {
+                return res.status(400).json({ message: 'User ID is required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const texPasImgUrl = driver.tex_pas_img;  
+            if (!texPasImgUrl) {
+                return res.status(400).json({ message: 'No technical passport image found to delete' });
+            }
+    
+            await deleteFile(texPasImgUrl, configService);
+    
+            await driver.update({ tex_pas_img: null });
+    
+            return res.json({
+                message: 'Technical passport image deleted successfully',
+            });
+        } catch (error) {
+            console.error('Error deleting technical passport image:', error);
+            next(error);  
+        }
     }
-  }
+
+    async replaceTexPassportImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+            const file = req.file;  
+    
+            if (!file || !user_id) {
+                return res.status(400).json({ message: 'File and user ID are required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const oldTexPasImgUrl = driver.tex_pas_img;  
+    
+            const newTexPasImgUrl = await uploadFile(file, configService);
+    
+            if (oldTexPasImgUrl) {
+                await deleteFile(oldTexPasImgUrl, configService);
+            }
+    
+            await driver.update({ tex_pas_img: newTexPasImgUrl });
+    
+            return res.json({
+                message: 'Technical passport image replaced successfully',
+                new_tex_pas_img: newTexPasImgUrl,
+            });
+        } catch (error) {
+            console.error('Error replacing technical passport image:', error);
+            next(error);  
+        }
+    }
+
+    // Prava image
+    async uploadPravaImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+            const file = req.file;  
+            
+            console.log(323, user_id, file);
+            
+            if (!file || !user_id) {
+                return res.status(400).json({ message: 'User ID and file are required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const fileUrl = await uploadFile(file, configService);
+    
+            await driver.update({ prava_img: fileUrl });
+    
+            return res.json({
+                message: 'Technical passport image uploaded successfully',
+                prava_img: fileUrl
+            });
+        } catch (error) {
+            console.error('Error uploading technical passport image:', error);
+            next(error);  
+        }
+    }
+
+    async deletePravaImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+    
+            if (!user_id) {
+                return res.status(400).json({ message: 'User ID is required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const texPasImgUrl = driver.prava_img;  
+            if (!texPasImgUrl) {
+                return res.status(400).json({ message: 'No technical passport image found to delete' });
+            }
+    
+            await deleteFile(texPasImgUrl, configService);
+    
+            await driver.update({ prava_img: null });
+    
+            return res.json({
+                message: 'Technical passport image deleted successfully',
+            });
+        } catch (error) {
+            console.error('Error deleting technical passport image:', error);
+            next(error);  
+        }
+    }
+
+    async replacePravaImage(req, res, next) {
+        try {
+            const { user_id } = req.query;  
+            const file = req.file;  
+    
+            if (!file || !user_id) {
+                return res.status(400).json({ message: 'File and user ID are required' });
+            }
+    
+            const driver = await Driver.findOne({ where: { user_id } });
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' });
+            }
+    
+            const oldTexPasImgUrl = driver.prava_img;  
+    
+            const newTexPasImgUrl = await uploadFile(file, configService);
+    
+            if (oldTexPasImgUrl) {
+                await deleteFile(oldTexPasImgUrl, configService);
+            }
+    
+            await driver.update({ prava_img: newTexPasImgUrl });
+    
+            return res.json({
+                message: 'Technical passport image replaced successfully',
+                new_prava_img: newTexPasImgUrl,
+            });
+        } catch (error) {
+            console.error('Error replacing technical passport image:', error);
+            next(error);  
+        }
+    }
 
 }
 

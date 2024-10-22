@@ -4,8 +4,6 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const router = require("./router/index");
 const errorHandler = require("./middleware/ErrorHandlingMiddlware");
-const swaggerUi = require("swagger-ui-express");
-const swaggerJsDoc = require("swagger-jsdoc");
 const http = require('http');
 
 const app = express();
@@ -41,27 +39,6 @@ app.use('/uploads', express.static('uploads'));
 app.use("/api", router);
 
 app.use(errorHandler);
-
-
-const swaggerOptions = {
-    swaggerDefinition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'API Documentation',
-        version: '1.0.0',
-        description: 'API Information',
-      },
-      servers: [
-        {
-          url: process.env.BASE_URL,
-        },
-      ],
-    },
-    apis: ['./swagger/admin-auth/auth.js', './swagger/user-auth/auth.js'],
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Root route
 app.get('/', async (req, res) => {
