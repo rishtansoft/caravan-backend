@@ -122,7 +122,7 @@ module.exports = (sequelize) => {
 
   Driver.init(
     {
-      car_type_id: {  
+      car_type_id: {
         type: DataTypes.UUID,
         references: {
           model: "CarType",
@@ -189,7 +189,7 @@ module.exports = (sequelize) => {
 
   class CarType extends BaseModel {
     static associate(models) {
-      
+
     }
   }
 
@@ -208,7 +208,7 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
       dim_x: {
-        type: DataTypes.DECIMAL(10, 2), 
+        type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
       dim_y: {
@@ -222,7 +222,7 @@ module.exports = (sequelize) => {
     },
     {
       sequelize,
-      tableName: "CarType", 
+      tableName: "CarType",
     }
   );
 
@@ -250,26 +250,19 @@ module.exports = (sequelize) => {
       },
       name: DataTypes.STRING,
       cargo_type: DataTypes.STRING,
-      origin_location: DataTypes.STRING,
-      destination_location: DataTypes.STRING,
-      stop_location: DataTypes.STRING,
-      weight: DataTypes.FLOAT,
-      length: DataTypes.FLOAT,
-      width: DataTypes.FLOAT,
-      height: DataTypes.FLOAT,
-      load_img: DataTypes.STRING,
-      car_type: DataTypes.STRING,
       receiver_phone: DataTypes.STRING,
-      payer: DataTypes.STRING,
+      payer: {
+        type: DataTypes.ENUM("sender", "receiver", "third_party"),
+        allowNull: false,
+      },
       description: DataTypes.TEXT,
-      loading_time: DataTypes.DATE,
       load_status: {
         type: DataTypes.ENUM(
-          "posted",
-          "assigned",
-          "picked_up",
-          "in_transit",
-          "delivered"
+          "posted", // yangi yuk elon qilingan
+          "assigned", // haydovchiga tayinlangan
+          "picked_up", // yuklangmoqda
+          "in_transit", // yolda
+          "delivered", // yetkazildi
         ),
         defaultValue: "posted",
       },
@@ -279,6 +272,96 @@ module.exports = (sequelize) => {
       tableName: "Load",
     }
   );
+
+
+  class Location extends BaseModel {
+    static associate(models) {
+      Location.belongsTo(models.Load, { foreignKey: "load_id" });
+    }
+  }
+
+  Location.init({
+    load_id: {
+      type: DataTypes.UUID,
+      references: {
+        model: "Load",
+        key: "id",
+      },
+    },
+    location_type: { // 'origin', 'stop', 'destination'
+      type: DataTypes.ENUM("origin", "stop", "destination"),
+    },
+    address: DataTypes.STRING,
+    lat: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: -90,
+        max: 90,
+      },
+    },
+    lon: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: -180,
+        max: 180,
+      },
+    },
+  }, {
+    sequelize,
+    tableName: "Locations",
+  });
+
+  class LoadDetails extends BaseModel {
+    static associate(models) {
+      LoadDetails.belongsTo(models.Load, { foreignKey: "load_id" });
+      LoadDetails.belongsTo(models.CarType, { foreignKey: "car_type_id" });
+    }
+  }
+  
+  LoadDetails.init({
+    load_id: {
+      type: DataTypes.UUID,
+      references: {
+        model: "Load",
+        key: "id",
+      },
+    },
+    weight: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: 0,
+      },
+    },
+    length: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: 0,
+      },
+    },
+    width: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: 0,
+      },
+    },
+    height: {
+      type: DataTypes.FLOAT,
+      validate: {
+        min: 0,
+      },
+    },
+    car_type_id: {
+      type: DataTypes.UUID,
+      references: {
+        model: "CarType",
+        key: "id",
+      },
+    },
+    loading_time: DataTypes.DATE,
+  }, {
+    sequelize,
+    tableName: "LoadDetails",
+  });
 
   // Assignment modeli
   class Assignment extends BaseModel {
@@ -323,43 +406,8 @@ module.exports = (sequelize) => {
       tableName: "Assignment",
     }
   );
+  
 
-  // Location modeli
-  class Location extends BaseModel {
-    static associate(models) {
-      Location.belongsTo(models.Assignment);
-    }
-  }
-
-  Location.init({
-    assignment_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: "Assignment",
-        key: "id",
-      },
-    },
-    start_latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    start_longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    end_latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
-    },
-    end_longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
-    },
-    order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1,
-    },
-  });
 
   // DriverStop modeli
   class DriverStop extends BaseModel {
@@ -464,7 +512,7 @@ module.exports = (sequelize) => {
       UserRegister.belongsTo(models.Users, { foreignKey: "user_id" });
     }
   }
-  
+
   UserRegister.init(
     {
       id: {
@@ -511,7 +559,7 @@ module.exports = (sequelize) => {
       timestamps: true, // Sequelize avtomatik tarzda vaqt muhrlarini boshqaradi
     }
   );
-  
+
 
   Users.associate = (models) => {
     Users.hasOne(models.Driver);
