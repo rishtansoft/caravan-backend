@@ -1,4 +1,4 @@
-const { Users, Location, Load, CarType } = require("../../models/index");
+const { Users, Location, Load, CarType, LoadDetails } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
 const Joi = require('joi');
@@ -7,7 +7,7 @@ class LoadController {
 
   async getLoadDetails(req, res, next) {
     try {
-      const { load_id } = req.params;
+      const { load_id } = req.query;
 
       const { user_id} = req.body;
   
@@ -19,33 +19,41 @@ class LoadController {
       if (user.role !== 'cargo_owner') {
         return next(ApiError.forbidden("Only cargo owners can update loads"));
       }
-  
-      const load = await Load.findByPk(load_id, {
-        include: [
-          {
-            model: Location, // Yuk joylashuvlari
-            attributes: ['location_type', 'address', 'lat', 'lon'],
-          },
-          {
-            model: LoadDetails, // Yuk tafsilotlari
-            attributes: ['weight', 'length', 'width', 'height', 'loading_time'],
-            include: [
-              {
-                model: CarType, // Mashina turi
-                attributes: ['name'], // CarType modelidan nomini olish
-              },
-            ],
-          },
-        ],
-      });
-  
+
+      const load = await Load.findByPk(load_id);
+      
+      let result = {};
       if (!load) {
         return next(ApiError.badRequest("Load not found"));
       }
-  
+
+      result.main = load;
+      
+      const locations = await Location.findAll({
+        where: { load_id: load.id }
+      });
+
+      if (locations) {
+        result.locations = locations
+      }
+
+      const loadDetails = await LoadDetails.findAll({
+        where: { load_id: load_id },
+        include: [
+          {
+            model: CarType,
+            attributes: ['name'],
+          },
+        ],
+      });
+
+      if (loadDetails) {
+        result.loadDetails = loadDetails
+      }
+
       return res.status(200).json({
         message: "Load details retrieved successfully",
-        load,
+        result,
       });
       
     } catch (error) {
@@ -190,7 +198,8 @@ class LoadController {
 
   async deactivateLoad(req, res, next) {
     try {
-      const { load_id, user_id } = req.params;
+      const { load_id } = req.query;
+      const {user_id} = req.body;
   
       const user = await Users.findByPk(user_id);
       if (!user) {

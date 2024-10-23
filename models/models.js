@@ -189,7 +189,7 @@ module.exports = (sequelize) => {
 
   class CarType extends BaseModel {
     static associate(models) {
-
+      CarType.hasMany(LoadDetails, { foreignKey: 'car_type_id' });
     }
   }
 
@@ -231,6 +231,11 @@ module.exports = (sequelize) => {
     static associate(models) {
       Load.belongsTo(models.Users, { foreignKey: "user_id" });
       Load.hasOne(models.Assignment, { foreignKey: "load_id" });
+
+      Load.hasMany(models.Location, { foreignKey: 'load_id' });
+      Load.hasOne(models.LoadDetails, { foreignKey: 'load_id' });
+      Load.hasOne(models.LoadDetails, { foreignKey: 'load_id' });
+
     }
   }
 
@@ -276,7 +281,9 @@ module.exports = (sequelize) => {
 
   class Location extends BaseModel {
     static associate(models) {
-      Location.belongsTo(models.Load, { foreignKey: "load_id" });
+      // Location.belongsTo(models.Load, { foreignKey: 'load_id' });
+      Location.belongsTo(Load, { foreignKey: 'load_id' });
+
     }
   }
 
@@ -313,8 +320,8 @@ module.exports = (sequelize) => {
 
   class LoadDetails extends BaseModel {
     static associate(models) {
-      LoadDetails.belongsTo(models.Load, { foreignKey: "load_id" });
-      LoadDetails.belongsTo(models.CarType, { foreignKey: "car_type_id" });
+      LoadDetails.belongsTo(Load, { foreignKey: 'load_id' });
+      LoadDetails.belongsTo(CarType, { foreignKey: 'car_type_id' });
     }
   }
   
@@ -588,6 +595,7 @@ module.exports = (sequelize) => {
     LocationCron,
     Notification,
     UserRegister,
-    CarType
+    CarType,
+    LoadDetails
   };
 };
