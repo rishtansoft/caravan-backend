@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
 module.exports = new Sequelize(
@@ -9,11 +10,11 @@ module.exports = new Sequelize(
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialectOptions: {
-              ssl: {
-                  require: true,
-                  rejectUnauthorized: false,
-              },
-            useUTC: false,
+            //   ssl: {
+            //       require: true,
+            //       rejectUnauthorized: false,
+            //   },
+            // useUTC: false,
         },
         timezone: '+05:00'
     }
