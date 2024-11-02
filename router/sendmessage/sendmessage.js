@@ -5,6 +5,6 @@ const { sendData, onlineUsers } = require('../../controllers/sendmessage/sendmes
 
 
 router.post('/broadcast', sendData)
-router.post('/online-users', onlineUsers)
+router.get('/online-users', onlineUsers)
 
 module.exports = router;
