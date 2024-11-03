@@ -415,7 +415,6 @@ module.exports = (sequelize) => {
   );
   
 
-
   // DriverStop modeli
   class DriverStop extends BaseModel {
     static associate(models) {

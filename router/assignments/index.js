@@ -7,6 +7,6 @@ const router = express.Router();
 
 
 router.use(protect);
-router.post('/', assignmentController.createAssignment);        
+// router.post('/', assignmentController.createAssignment);        
 
 module.exports = router;

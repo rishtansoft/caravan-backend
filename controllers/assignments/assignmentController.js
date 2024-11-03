@@ -2,45 +2,49 @@ const { Assignment, Driver, Load } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
 
-class assignmentController {
-  async  createAssignment(req, res, next) {
+class AssignmentController {
+  async assignLoadToDriver(req, res) {
     try {
-    
-      const { load_id, driver_id } = req.body;
+      const { user_id, load_id, pickUpTime, deliveryTime } = req.body;
 
+      const driver = await Driver.findOne({where: {user_id}});
       const load = await Load.findByPk(load_id);
-      const driver = await Driver.findOne({
-        where: {
-          user_id: driver_id
-        }
-      })
-      ;
-      const drivers = await Driver.findAll()
-      console.log("drivers  " + drivers);
-      console.log("Load " + load);
-      console.log("driver  " + driver);
-      
 
-       if (!load || !driver) {
-        return next(ApiError.badRequest('Invalid load or driver ID'));
+      if (load.load_status == 'assigned' || load.load_status == 'picked_up' || load.load_status == 'in_transit' || load.load_status == 'delivered') {
+        return res.status(404).json({ error: "Load already assigned" });
       }
 
-      //  if (req.user.role !== 'admin' && req.user.id !== load.user_id) {
-      //   return next(ApiError.forbidden('You are not authorized to assign this load'));
-      // }
+      if (!driver) {
+        return res.status(404).json({ error: "Driver not found" });
+      }
 
+      if (!load) {
+        return res.status(404).json({ error: "Load not found" });
+      }
 
+      // Assignment yaratish
       const assignment = await Assignment.create({
-        load_id: load_id,
         driver_id: driver.id,
-        assignment_status: 'assigned'
+        load_id,
+        pickUpTime: pickUpTime || null,
+        deliveryTime: deliveryTime || null,
+        assignment_status: "assigned"
       });
 
-      res.status(201).json({ message: 'Assignment created successfully', assignment });
+      driver.driver_status = 'at_work';
+      await driver.save();
 
-   
+      // Yuk holatini yangilash
+      load.load_status = "assigned";
+      await load.save();
+
+      return res.status(201).json({
+        message: "Load successfully assigned to driver",
+        assignment
+      });
     } catch (error) {
-      next(ApiError.internal('Error creating assignment: ' + error.message));
+      console.error("Error assigning load to driver:", error);
+      return res.status(500).json({ error: "Failed to assign load to driver" });
     }
   }
 
@@ -48,4 +52,4 @@ class assignmentController {
 
 
 
-module.exports = new assignmentController();
+module.exports = new AssignmentController();

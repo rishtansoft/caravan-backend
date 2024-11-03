@@ -119,11 +119,8 @@ class LoadController {
         loading_time,
         is_round_trip
       } = req.body;
-
-      console.log(123, user_id);
       
       const user = await Users.findByPk(user_id);
-      console.log(124, user);
       
       if (!user) {
         return next(ApiError.badRequest("User not found"));
