@@ -17,5 +17,5 @@ module.exports = new Sequelize(
         },
         timezone: '+05:00'
     }
-); 
+);
 
