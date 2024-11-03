@@ -2,6 +2,7 @@ const { Users, Location, Load, CarType, LoadDetails } = require("../../models/in
 const ApiError = require("../../error/ApiError");
 
 const Joi = require('joi');
+const { socketService } = require('../../http');
 
 class LoadController {
 
@@ -9,26 +10,26 @@ class LoadController {
     try {
       const { load_id } = req.query;
 
-      const { user_id} = req.body;
-  
+      const { user_id } = req.body;
+
       const user = await Users.findByPk(user_id);
       if (!user) {
         return next(ApiError.badRequest("User not found"));
       }
-  
+
       if (user.role !== 'cargo_owner') {
         return next(ApiError.forbidden("Only cargo owners can update loads"));
       }
 
       const load = await Load.findByPk(load_id);
-      
+
       let result = {};
       if (!load) {
         return next(ApiError.badRequest("Load not found"));
       }
 
       result.main = load;
-      
+
       const locations = await Location.findAll({
         where: { load_id: load.id }
       });
@@ -55,7 +56,7 @@ class LoadController {
         message: "Load details retrieved successfully",
         result,
       });
-      
+
     } catch (error) {
       console.error("Error retrieving load details:", error);
       next(ApiError.internal("Error retrieving load details"));
@@ -94,12 +95,12 @@ class LoadController {
         loading_time: Joi.date().required(),
         is_round_trip: Joi.boolean().required(),
       });
-  
+
       const { error } = schema.validate(req.body);
       if (error) {
         return next(ApiError.badRequest(`Validation error: ${error.details[0].message}`));
       }
-  
+
       const {
         user_id,
         name,
@@ -118,16 +119,16 @@ class LoadController {
         loading_time,
         is_round_trip
       } = req.body;
-  
+
       const user = await Users.findByPk(user_id);
       if (!user) {
         return next(ApiError.badRequest("User not found"));
       }
-  
+
       if (user.role !== 'cargo_owner') {
         return next(ApiError.forbidden("Only cargo owners can post loads"));
       }
-  
+
       const load = await Load.create({
         user_id: user.id,
         name,
@@ -136,7 +137,7 @@ class LoadController {
         payer,
         description,
       });
-  
+
       await Location.create({
         load_id: load.id,
         location_type: 'origin',
@@ -144,7 +145,7 @@ class LoadController {
         lat: origin_location.lat,
         lon: origin_location.lon,
       });
-  
+
       await Location.create({
         load_id: load.id,
         location_type: 'destination',
@@ -152,7 +153,7 @@ class LoadController {
         lat: destination_location.lat,
         lon: destination_location.lon,
       });
-  
+
       if (Array.isArray(stop_locations) && stop_locations.length > 0) {
         for (const stop of stop_locations) {
           await Location.create({
@@ -164,12 +165,12 @@ class LoadController {
           });
         }
       }
-  
+
       const carType = await CarType.findByPk(car_type_id);
       if (!carType) {
         return next(ApiError.badRequest("Car type not found"));
       }
-  
+
       // 7. Yuk tafsilotlarini saqlash
       await LoadDetails.create({
         load_id: load.id,
@@ -180,16 +181,38 @@ class LoadController {
         car_type_id: carType.id,
         loading_time,
       });
-  
+
       await load.update({
         is_round_trip,
       });
-  
+
+      socketService.createdNewLoad({
+        message: "New load posted",
+        load: {
+          id: load.id,
+          name,
+          cargo_type,
+          receiver_phone,
+          payer,
+          description,
+          origin_location,
+          destination_location,
+          stop_locations,
+          weight,
+          length,
+          width,
+          height,
+          car_type_id,
+          loading_time,
+          is_round_trip
+        }
+      });
+
       return res.status(201).json({
         message: "Load created successfully",
         load,
       });
-  
+
     } catch (error) {
       console.error("Error creating complete load:", error);
       next(ApiError.internal("Error creating complete load"));
@@ -199,17 +222,17 @@ class LoadController {
   async deactivateLoad(req, res, next) {
     try {
       const { load_id } = req.query;
-      const {user_id} = req.body;
-  
+      const { user_id } = req.body;
+
       const user = await Users.findByPk(user_id);
       if (!user) {
         return next(ApiError.badRequest("User not found"));
       }
-  
+
       if (user.role !== 'cargo_owner') {
         return next(ApiError.forbidden("Only cargo owners can deactivate loads"));
       }
-  
+
       const load = await Load.findByPk(load_id);
       if (!load) {
         return next(ApiError.badRequest("Load not found"));
@@ -218,17 +241,17 @@ class LoadController {
       if (load.load_status == "picked_up" || load.load_status == "in_transit" || load.load_status == "delivered") {
         return next(ApiError.badRequest("Only driver can deactivate this load"));
       }
-  
+
       await load.update({ status: 'inactive' });
-  
+
       await Location.update({ status: 'inactive' }, { where: { load_id: load.id } });
-  
+
       await LoadDetails.update({ status: 'inactive' }, { where: { load_id: load.id } });
-  
+
       return res.status(200).json({
         message: "Load and related information deactivated successfully",
       });
-  
+
     } catch (error) {
       console.error("Error deactivating load:", error);
       next(ApiError.internal("Error deactivating load"));
