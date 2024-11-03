@@ -1,160 +1,238 @@
-const { Users,  Load } = require("../../models/index");
+const { Users, Location, Load, CarType, LoadDetails } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
+const Joi = require('joi');
 
 class LoadController {
-  // Loads
-  async  createLoadStep1 (req, res, next) {
-    try {
-      const { origin_location, destination_location, stop_location } = req.body;
-      const user_id = req.user.id;
 
+  async getLoadDetails(req, res, next) {
+    try {
+      const { load_id } = req.query;
+
+      const { user_id} = req.body;
+  
       const user = await Users.findByPk(user_id);
       if (!user) {
-        return next(ApiError.forbidden("User not found"));
+        return next(ApiError.badRequest("User not found"));
+      }
+  
+      if (user.role !== 'cargo_owner') {
+        return next(ApiError.forbidden("Only cargo owners can update loads"));
       }
 
-      if (user.role === "driver") {
-        return next(ApiError.forbidden("Drivers are not allowed to create loads"));
+      const load = await Load.findByPk(load_id);
+      
+      let result = {};
+      if (!load) {
+        return next(ApiError.badRequest("Load not found"));
       }
 
-      const newLoad = await Load.create({
-        user_id,
-        origin_location,
-        destination_location,
-        stop_location,
+      result.main = load;
+      
+      const locations = await Location.findAll({
+        where: { load_id: load.id }
       });
 
-      return res.status(201).json({ message: "Load step 1 completed", load_id: newLoad.id });
+      if (locations) {
+        result.locations = locations
+      }
+
+      const loadDetails = await LoadDetails.findAll({
+        where: { load_id: load_id },
+        include: [
+          {
+            model: CarType,
+            attributes: ['name'],
+          },
+        ],
+      });
+
+      if (loadDetails) {
+        result.loadDetails = loadDetails
+      }
+
+      return res.status(200).json({
+        message: "Load details retrieved successfully",
+        result,
+      });
+      
     } catch (error) {
-      next(ApiError.internal("Error creating load step 1: " + error.message));
+      console.error("Error retrieving load details:", error);
+      next(ApiError.internal("Error retrieving load details"));
     }
   }
 
-  async createLoadStep2 (req, res, next) {
+  async createLoad(req, res, next) {
     try {
-      const { load_id, cargo_type, weight, height, loading_time, car_type } = req.body;
-
-      const load = await Load.findByPk(load_id);
-      if (!load) {
-        return next(ApiError.notFound("Load not found"));
-      }
-
-      await load.update({
-        cargo_type,
-        weight,
-        height,
-        loading_time,
-        car_type,
+      const schema = Joi.object({
+        user_id: Joi.string().required(),
+        name: Joi.string().required(),
+        cargo_type: Joi.string().required(),
+        receiver_phone: Joi.string().required(),
+        payer: Joi.string().required(),
+        description: Joi.string().required(),
+        origin_location: Joi.object({
+          address: Joi.string().required(),
+          lat: Joi.number().required(),
+          lon: Joi.number().required(),
+        }).required(),
+        destination_location: Joi.object({
+          address: Joi.string().required(),
+          lat: Joi.number().required(),
+          lon: Joi.number().required(),
+        }).required(),
+        stop_locations: Joi.array().items(Joi.object({
+          address: Joi.string().required(),
+          lat: Joi.number().required(),
+          lon: Joi.number().required(),
+        })).optional(),
+        weight: Joi.number().required(),
+        length: Joi.number().required(),
+        width: Joi.number().required(),
+        height: Joi.number().required(),
+        car_type_id: Joi.string().required(),
+        loading_time: Joi.date().required(),
+        is_round_trip: Joi.boolean().required(),
       });
-
-      return res.status(200).json({ message: "Load step 2 completed", load_id: load.id });
-    } catch (error) {
-      next(ApiError.internal("Error updating load step 2: " + error.message));
-    }
-  };
-
-  async createLoadStep3 (req, res, next) {
-    try {
-      const { load_id, receiver_phone, payer, description, driver_return } = req.body;
-
-      const load = await Load.findByPk(load_id);
-      if (!load) {
-        return next(ApiError.notFound("Load not found"));
+  
+      const { error } = schema.validate(req.body);
+      if (error) {
+        return next(ApiError.badRequest(`Validation error: ${error.details[0].message}`));
       }
-
-      await load.update({
+  
+      const {
+        user_id,
+        name,
+        cargo_type,
         receiver_phone,
         payer,
         description,
-        driver_return,
-      });
-
-      return res.status(200).json({ message: "Load created successfully", load: load });
-    } catch (error) {
-      next(ApiError.internal("Error completing load creation: " + error.message));
-    }
-  };
-
-  async  getLoad(req, res, next) {
-    try {
-      const { loadId } = req.params;
-
-      const load = await Load.findByPk(loadId);
-
-      if (!load) {
-        return next(ApiError.notFound("Load not found"));
-      }
-
-      return res.status(200).json(load);
-    } catch (error) {
-      next(ApiError.internal("Error fetching load: " + error.message));
-    }
-  }
-
-  async  updateLoad(req, res, next) {
-    try {
-      const { loadId } = req.params;
-      const { name, cargo_type, weight, length, width, height, load_img,description ,payer,receiver_phone} = req.body;
-
-      const load = await Load.findByPk(loadId);
-
-      if (!load) {
-        return next(ApiError.notFound("Load not found"));
-      }
-
+        origin_location,
+        destination_location,
+        stop_locations,
+        weight,
+        length,
+        width,
+        height,
+        car_type_id,
+        loading_time,
+        is_round_trip
+      } = req.body;
   
-      load.name = name || load.name;
-      load.cargo_type = cargo_type || load.cargo_type;
-      load.weight = weight || load.weight;
-      load.length = length || load.length;
-      load.width = width || load.width;
-      load.height = height || load.height;
-      load.load_img = load_img || load.load_img;
-      load.description = description || load.description;
-      load.payer = payer || load.payer;
-      load.receiver_phone = receiver_phone || load.receiver_phone;
-
-      await load.save();
-
-      return res.status(200).json({ message: "Load updated successfully", load });
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+  
+      if (user.role !== 'cargo_owner') {
+        return next(ApiError.forbidden("Only cargo owners can post loads"));
+      }
+  
+      const load = await Load.create({
+        user_id: user.id,
+        name,
+        cargo_type,
+        receiver_phone,
+        payer,
+        description,
+      });
+  
+      await Location.create({
+        load_id: load.id,
+        location_type: 'origin',
+        address: origin_location.address,
+        lat: origin_location.lat,
+        lon: origin_location.lon,
+      });
+  
+      await Location.create({
+        load_id: load.id,
+        location_type: 'destination',
+        address: destination_location.address,
+        lat: destination_location.lat,
+        lon: destination_location.lon,
+      });
+  
+      if (Array.isArray(stop_locations) && stop_locations.length > 0) {
+        for (const stop of stop_locations) {
+          await Location.create({
+            load_id: load.id,
+            location_type: 'stop',
+            address: stop.address,
+            lat: stop.lat,
+            lon: stop.lon,
+          });
+        }
+      }
+  
+      const carType = await CarType.findByPk(car_type_id);
+      if (!carType) {
+        return next(ApiError.badRequest("Car type not found"));
+      }
+  
+      // 7. Yuk tafsilotlarini saqlash
+      await LoadDetails.create({
+        load_id: load.id,
+        weight,
+        length,
+        width,
+        height,
+        car_type_id: carType.id,
+        loading_time,
+      });
+  
+      await load.update({
+        is_round_trip,
+      });
+  
+      return res.status(201).json({
+        message: "Load created successfully",
+        load,
+      });
+  
     } catch (error) {
-      next(ApiError.internal("Error updating load: " + error.message));
+      console.error("Error creating complete load:", error);
+      next(ApiError.internal("Error creating complete load"));
     }
   }
 
-  async  deleteLoad(req, res, next) {
+  async deactivateLoad(req, res, next) {
     try {
-      const { loadId } = req.params;
-
-      const load = await Load.findByPk(loadId);
-
+      const { load_id } = req.query;
+      const {user_id} = req.body;
+  
+      const user = await Users.findByPk(user_id);
+      if (!user) {
+        return next(ApiError.badRequest("User not found"));
+      }
+  
+      if (user.role !== 'cargo_owner') {
+        return next(ApiError.forbidden("Only cargo owners can deactivate loads"));
+      }
+  
+      const load = await Load.findByPk(load_id);
       if (!load) {
-        return next(ApiError.notFound("Load not found"));
+        return next(ApiError.badRequest("Load not found"));
       }
 
-      await load.destroy();
-
-      return res.status(200).json({ message: "Load deleted successfully" });
-    } catch (error) {
-      next(ApiError.internal("Error deleting load: " + error.message));
-    }
-  }
-
-
-  async  getUserLoads(req, res, next) {
-    try {
-      const user_id = req.user.id; 
-
-      const loads = await Load.findAll({
-        where: { user_id }
+      if (load.load_status == "picked_up" || load.load_status == "in_transit" || load.load_status == "delivered") {
+        return next(ApiError.badRequest("Only driver can deactivate this load"));
+      }
+  
+      await load.update({ status: 'inactive' });
+  
+      await Location.update({ status: 'inactive' }, { where: { load_id: load.id } });
+  
+      await LoadDetails.update({ status: 'inactive' }, { where: { load_id: load.id } });
+  
+      return res.status(200).json({
+        message: "Load and related information deactivated successfully",
       });
-
-      return res.status(200).json(loads);
+  
     } catch (error) {
-      next(ApiError.internal("Error fetching loads: " + error.message));
+      console.error("Error deactivating load:", error);
+      next(ApiError.internal("Error deactivating load"));
     }
-
   }
 
 }
