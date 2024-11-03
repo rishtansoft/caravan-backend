@@ -4,13 +4,12 @@ const models = require("./models/index");
 const sequelize = require("./db");
 const { server, socketService, app } = require("./http");
 const sendmessage = require('./router/sendmessage/sendmessage')
-// const { io } = require('./socketio')
-
-// Connected userlarni saqlash uchun Map
+const router = require("./router/index");
 
 app.use('/socket', sendmessage)
 
-
+// Routes
+app.use("/api", router);
 
 const start = async () => {
     try {

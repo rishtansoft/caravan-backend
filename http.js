@@ -2,10 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const router = require("./router/index");
 const errorHandler = require("./middleware/ErrorHandlingMiddlware");
 const http = require('http');
 const { Server } = require('socket.io')
+const { Users, Driver } = require('./models'); 
 
 const app = express();
 
@@ -36,9 +36,6 @@ app.use((req, res, next) => {
 // Static file serving
 app.use('/uploads', express.static('uploads'));
 
-// Routes
-app.use("/api", router);
-
 app.use(errorHandler);
 
 // Root route
@@ -60,12 +57,38 @@ class SocketService {
         });
 
         this.onlineUsers = new Set();
+        this.onlineDrivers = new Set();
+        this.onlineOwners = new Set();
 
-        this.io.on('connection', (socket) => {
-            console.log('🟢 New user connected:', socket.id);
+        this.io.on('connection', async (socket) => {
+            
+            // role -> driver or cargo_owner
+            const {user_id, unique_id, role} = socket.handshake.query;
+            
+            if (!(user_id && unique_id && role)) {
+                console.log('❌ Token yo\'q. Ulana olmadi.');
+                socket.disconnect(); 
+                return;
+            }
+
+            // Foydalanuvchini tekshirish
+            const user = await Users.findByPk(user_id);
+            if (!user) {
+                console.log('❌ Foydalanuvchi topilmadi.');
+                socket.disconnect();
+                return;
+            }
+
+            if (role == 'driver') {
+                this.onlineDrivers.add(socket);    
+            }
+
+            if (role == 'cargo_owner') {
+                this.onlineDrivers.add(socket);    
+            }
 
             // Yangi user qo'shish
-            this.onlineUsers.add(socket.id);
+            this.onlineUsers.add(socket);
 
             console.log(`📊 Total online users: ${this.onlineUsers.size}`);
             console.log('👥 Current users:', Array.from(this.onlineUsers));
@@ -74,6 +97,11 @@ class SocketService {
             socket.on('disconnect', () => {
                 console.log('🔴 User disconnected:', socket.id);
                 this.onlineUsers.delete(socket.id);
+                if (role === 'driver') {
+                    this.onlineDrivers.delete(socket.id);
+                } else if (role === 'cargo_owner') {
+                    this.onlineOwners.delete(socket.id);
+                }
                 console.log(`📊 Remaining online users: ${this.onlineUsers.size}`);
             });
 
@@ -114,12 +142,43 @@ class SocketService {
             count: this.onlineUsers.size
         };
     }
+
+    getOnlineOwners() {
+        return {
+            drivers: Array.from(this.onlineDrivers),
+            count: this.onlineDrivers.size
+        };
+    }
+
+    getOnlineDrivers() {
+        return {
+            owners: Array.from(this.onlineOwners),
+            count: this.onlineOwners.size
+        };
+    }
+
+    async createdNewLoad(message) {
+        const emptyDrivers = [];
+        
+        for (const socket of this.onlineDrivers) {
+            const user = await Users.findByPk(socket.handshake.query.user_id); 
+            if (user && user.role === 'driver') {
+                const driverDetails = await Driver.findOne({ where: { user_id: user.id } });
+
+                if (driverDetails && driverDetails.driver_status === 'empty') {
+                    emptyDrivers.push(socket); 
+                }
+            }
+        }
+
+        for (const socket of emptyDrivers) {
+            socket.emit('created_load', message); 
+        }
+    }
+    
+    
 }
 
-// Single instance yaratish
 const socketService = new SocketService();
-
-
-
 
 module.exports = { server, socketService, app };
