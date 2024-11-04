@@ -453,34 +453,74 @@ module.exports = (sequelize) => {
   });
 
   // LocationCron modeli
-  class LocationCron extends BaseModel {
+  class Location extends Model {
     static associate(models) {
-      LocationCron.belongsTo(models.Assignment);
+        Location.belongsTo(models.Assignment, {
+            foreignKey: 'assignment_id',
+            as: 'assignment'
+        });
     }
-  }
+}
 
-  LocationCron.init({
+Location.init({
     assignment_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: "Assignment",
-        key: "id",
-      },
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: "Assignment",
+            key: "id",
+        },
+        onDelete: 'CASCADE',
     },
-    time: DataTypes.DATE,
+    recordedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+    },
     latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: false,
+        validate: {
+            min: -90,
+            max: 90,
+        },
     },
     longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
+        type: DataTypes.DECIMAL(11, 8),
+        allowNull: false,
+        validate: {
+            min: -180,
+            max: 180,
+        },
     },
     order: {
-      type: DataTypes.INTEGER,
-      defaultValue: 1,
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
     },
-  });
+}, {
+    sequelize,
+    modelName: 'Location',
+    indexes: [
+        {
+            fields: ['assignment_id', 'order'],
+            unique: true, // unique constraint for assignment_id and order combination
+        },
+        {
+            fields: ['recordedAt'],
+        },
+    ],
+    hooks: {
+        beforeCreate: async (location, options) => {
+            // Increment order for each new entry related to the same assignment_id
+            const lastLocation = await Location.findOne({
+                where: { assignment_id: location.assignment_id },
+                order: [['order', 'DESC']],
+            });
+            location.order = lastLocation ? lastLocation.order + 1 : 1;
+        }
+    }
+});
 
   // Notification modeli
   class Notification extends BaseModel {
@@ -591,7 +631,6 @@ module.exports = (sequelize) => {
     Assignment,
     Location,
     DriverStop,
-    LocationCron,
     Notification,
     UserRegister,
     CarType,

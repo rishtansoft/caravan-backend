@@ -5,7 +5,7 @@ const session = require('express-session');
 const errorHandler = require("./middleware/ErrorHandlingMiddlware");
 const http = require('http');
 const { Server } = require('socket.io')
-const { Users, Driver } = require('./models'); 
+const { Users, Driver, Assignment, Location, Load } = require('./models');
 
 const app = express();
 
@@ -44,6 +44,29 @@ app.get('/', async (req, res) => {
     res.json('hello');
 });
 
+async function saveLocationToDB(driverId, latitude, longitude) {
+    const assignment = await Assignment.findOne({
+        where: {
+            driver_id: driverId,
+            assignment_status: "assigned",
+        },
+        order: [['createdAt', 'DESC']],
+    });
+
+    if (!assignment) {
+        console.log(`Haydovchiga yuk topilmadi: ${driverId}`);
+        return;
+    }
+
+    await Location.create({
+        assignment_id: assignment.id,
+        latitude,
+        longitude,
+        recordedAt: new Date(),
+    });
+}
+
+
 const server = http.createServer(app);
 class SocketService {
     constructor() {
@@ -61,17 +84,15 @@ class SocketService {
         this.onlineOwners = new Set();
 
         this.io.on('connection', async (socket) => {
-            
-            // role -> driver or cargo_owner
-            const {user_id, unique_id, role} = socket.handshake.query;
-            
+
+            const { user_id, unique_id, role } = socket.handshake.query;
+
             if (!(user_id && unique_id && role)) {
                 console.log('❌ Token yo\'q. Ulana olmadi.');
-                socket.disconnect(); 
+                socket.disconnect();
                 return;
             }
 
-            // Foydalanuvchini tekshirish
             const user = await Users.findByPk(user_id);
             if (!user) {
                 console.log('❌ Foydalanuvchi topilmadi.');
@@ -80,18 +101,56 @@ class SocketService {
             }
 
             if (role == 'driver') {
-                this.onlineDrivers.add(socket);    
+                this.onlineDrivers.add(socket);
             }
 
             if (role == 'cargo_owner') {
-                this.onlineDrivers.add(socket);    
+                this.onlineDrivers.add(socket);
             }
 
-            // Yangi user qo'shish
             this.onlineUsers.add(socket);
 
             console.log(`📊 Total online users: ${this.onlineUsers.size}`);
             console.log('👥 Current users:', Array.from(this.onlineUsers));
+
+            socket.on('locationUpdate', async ({ latitude, longitude, driverId }) => {
+                console.log(`📍 Yangi joylashuv qabul qilindi: ${driverId}, ${latitude}, ${longitude}`);
+
+                try {
+                    await saveLocationToDB(driverId, latitude, longitude);
+                    console.log("Joylashuv muvaffaqiyatli saqlandi.");
+                } catch (error) {
+                    console.error("Joylashuvni saqlashda xatolik yuz berdi:", error);
+                }
+
+                const assignment = await Assignment.findOne({ where: { driver_id: driverId } });
+                if (!assignment) {
+                    console.log("Ushbu haydovchi uchun yuk topilmadi.");
+                    return;
+                }
+
+                const load = await Load.findByPk(assignment.load_id);
+                if (!load) {
+                    console.log("Yuk ma'lumotlari topilmadi.");
+                    return;
+                }
+
+                const ownerId = load.owner_id;
+
+                const cargoOwnerSocket = Array.from(this.onlineOwners).find(socket =>
+                    socket.handshake.query.user_id === ownerId.toString()
+                );
+
+                if (cargoOwnerSocket) {
+                    cargoOwnerSocket.emit('driverLocationUpdated', {
+                        driverId,
+                        latitude,
+                        longitude,
+                    });
+                } else {
+                    console.log("Yuk egasi hozirda onlayn emas.");
+                }
+            });
 
             // User disconnect bo'lganda
             socket.on('disconnect', () => {
@@ -159,24 +218,24 @@ class SocketService {
 
     async createdNewLoad(message) {
         const emptyDrivers = [];
-        
+
         for (const socket of this.onlineDrivers) {
-            const user = await Users.findByPk(socket.handshake.query.user_id); 
+            const user = await Users.findByPk(socket.handshake.query.user_id);
             if (user && user.role === 'driver') {
                 const driverDetails = await Driver.findOne({ where: { user_id: user.id } });
 
                 if (driverDetails && driverDetails.driver_status === 'empty') {
-                    emptyDrivers.push(socket); 
+                    emptyDrivers.push(socket);
                 }
             }
         }
 
         for (const socket of emptyDrivers) {
-            socket.emit('created_load', message); 
+            socket.emit('created_load', message);
         }
     }
-    
-    
+
+
 }
 
 const socketService = new SocketService();
