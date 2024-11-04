@@ -39,9 +39,9 @@ module.exports = (sequelize) => {
   Users.init(
     {
       unique_id: {
-        type: DataTypes.STRING, // yoki INTEGER, agar siz raqamli bo'lishini xohlasangiz
+        type: DataTypes.STRING, 
         allowNull: true,
-        unique: true, // noyob qilib belgilash
+        unique: true, 
       },
       password: {
         type: DataTypes.STRING,
@@ -277,46 +277,6 @@ module.exports = (sequelize) => {
       tableName: "Load",
     }
   );
-
-
-  class Location extends BaseModel {
-    static associate(models) {
-      // Location.belongsTo(models.Load, { foreignKey: 'load_id' });
-      Location.belongsTo(Load, { foreignKey: 'load_id' });
-
-    }
-  }
-
-  Location.init({
-    load_id: {
-      type: DataTypes.UUID,
-      references: {
-        model: "Load",
-        key: "id",
-      },
-    },
-    location_type: { // 'origin', 'stop', 'destination'
-      type: DataTypes.ENUM("origin", "stop", "destination"),
-    },
-    address: DataTypes.STRING,
-    lat: {
-      type: DataTypes.FLOAT,
-      validate: {
-        min: -90,
-        max: 90,
-      },
-    },
-    lon: {
-      type: DataTypes.FLOAT,
-      validate: {
-        min: -180,
-        max: 180,
-      },
-    },
-  }, {
-    sequelize,
-    tableName: "Locations",
-  });
 
   class LoadDetails extends BaseModel {
     static associate(models) {
