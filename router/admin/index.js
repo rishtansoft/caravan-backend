@@ -4,6 +4,10 @@ const {
     validateRegistrationFields, 
     validateLoginFields 
 } = require("../../controllers/admin/authController");
+
+const adminsController = require("../../controllers/admin/adminsController");
+
+
 const {
     createCarType,
     getAllCarTypes,
@@ -19,6 +23,24 @@ router.post("/register", validateRegistrationFields, adminController.registerAdm
 
 // Admin login route'i
 router.post("/login", validateLoginFields, adminController.loginAdmin.bind(adminController));
+
+// router.put('/:adminId/update', (req, res) => {
+//     res.json({ message: "Route is working" });
+// });
+
+// router.put('/update', adminController.updateAdmin);
+router.put('/update',  adminsController.updateAdmin);
+
+
+// Update admin details
+router.put('/:adminId/update', adminController.updateAdmin.bind(adminController));
+
+// Get admin profile
+router.get('/profile', adminController.getAdminProfile);
+
+// Update admin password
+router.put('/password/update', adminController.updateAdminPassword);
+
 
 // Create a car type
 router.post('/car-type/create', createCarType);

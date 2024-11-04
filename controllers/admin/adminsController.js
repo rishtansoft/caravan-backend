@@ -4,66 +4,8 @@ const { body, validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const ApiError = require("../../error/ApiError");
 
-class AdminController {
-    validateRegistrationFields() {
-        return [
-            body("phone")
-                .exists().withMessage("Telefon raqami kiritilishi shart")
-                .matches(/^\+998[1-9]\d{8}$/).withMessage("Telefon raqami +998 bilan boshlanishi shart"),
+class AdminsController {
 
-            body("phone_2")
-                .optional()
-                .matches(/^\+998[1-9]\d{8}$/).withMessage("Qo'shimcha telefon raqami +998 bilan boshlanishi shart"),
-
-            body("lastname")
-                .exists().withMessage("Familiya kiritilishi shart")
-                .isLength({ min: 3 }).withMessage("Familiya kamida 3 belgidan iborat bo'lishi shart"),
-
-            body("firstname")
-                .exists().withMessage("Ism kiritilishi shart")
-                .isLength({ min: 3 }).withMessage("Ism kamida 3 belgidan iborat bo'lishi shart"),
-
-            body("address")
-                .optional(),
-
-            body("role")
-                .exists().withMessage("Rol kiritilishi shart")
-                .isIn(["admin", "superadmin"]).withMessage("Rol faqat 'admin' yoki 'superadmin' bo'lishi mumkin"),
-
-            body("password")
-                .exists().withMessage("Parol kiritilishi shart")
-                .isLength({ min: 4 }).withMessage("Parol kamida 4 belgidan iborat bo'lishi shart")
-                .matches(/^(?=.*[a-zA-Z])(?=.*\d)/).withMessage("Parol raqam va harflardan iborat bo'lishi shart")
-        ];
-    }
-
-    validateLoginFields() {
-        return [
-            body('phone')
-                .exists().withMessage('Telefon raqami kiritilishi shart')
-                .isString().withMessage('Telefon raqami matn ko\'rinishida bo\'lishi kerak')
-                .matches(/^\+998[0-9]{9}$/).withMessage('Telefon raqami O\'zbekiston formatida bo\'lishi kerak'),
-
-            body('password')
-                .exists().withMessage('Parol kiritilishi shart')
-                .isLength({ min: 4 }).withMessage('Parol kamida 4 ta belgidan iborat bo\'lishi shart')
-        ];
-    }
-
-    async validateAdmin(phone) {
-        const admin = await Admin.findOne({ where: { phone } });
-        if (!admin) {
-            throw ApiError.badRequest("Admin topilmadi");
-        }
-        return admin;
-    }
-
-    async validatePassword(password, hashedPassword) {
-        const isMatch = await bcrypt.compare(password, hashedPassword);
-        if (!isMatch) {
-            throw ApiError.badRequest("Parol noto'g'ri");
-        }
-    }
 
     async loginAdmin(req, res, next) {
         try {
@@ -105,6 +47,8 @@ class AdminController {
 
     async registerAdmin(req, res, next) {
         try {
+            console.log("ss ");
+            
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 return next(ApiError.badRequest("Validation error", errors.array()));
@@ -144,21 +88,26 @@ class AdminController {
             return next(
                 error instanceof ApiError 
                     ? error 
-                    : ApiError.internal("Adminni ro'yxatdan o'tkazishda xatolik: " + error.message)
+                    : ApiError.internal("Adminni ro'yxatdan o'tkazishda xatolik....: " + error.message)
             );
         }
     }
 
     async updateAdmin (req, res, next) {
-        
         try {
-            console.log("working.... ");
-            const { adminId } = req.params;
-            console.log(adminId);
-            
+            const adminId = req.query.id;  // Access the ID from the query string
             const { firstname, lastname, phone, phone_2, address, email, password } = req.body;
+            console.log(adminId);
 
-            // Update details logic
+            const allAdmins = await Admin.findAll({ attributes: ['id', 'firstname', 'lastname', 'phone'] });
+            console.log("All Admins:", allAdmins);  // Log all admins for verification
+
+
+            if (!adminId) {
+                return next(ApiError.badRequest('Admin ID is required'));
+            }
+
+            // Fetch the admin details
             const admin = await Admin.findByPk(adminId);
             if (!admin) return next(ApiError.notFound('Admin not found'));
 
@@ -208,13 +157,4 @@ class AdminController {
     }
 }
 
-const adminController = new AdminController();
-
-
-
-
-module.exports = {
-    adminController,
-    validateRegistrationFields: adminController.validateRegistrationFields(),
-    validateLoginFields: adminController.validateLoginFields()
-};
+module.exports = new AdminsController();
