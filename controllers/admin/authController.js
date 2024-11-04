@@ -114,6 +114,8 @@ class AdminController {
 
             // Check if admin already exists
             const existingAdmin = await Admin.findOne({ where: { phone } });
+            console.log(Admin);
+            
             if (existingAdmin) {
                 return next(ApiError.badRequest("Bu telefon raqami bilan admin allaqachon mavjud"));
             }

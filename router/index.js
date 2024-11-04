@@ -5,7 +5,7 @@ const usersRoutes = require("./user/index");
 const loadsRoutes = require("./load/index");
 const assignmentRoutes = require('./assignments/index');
 const driver = require('./driver');
-
+// const sendmessage = require('./sendmessage/sendmessage')
 const router = express.Router();
 
 // Admin va User route'larini birlashtirish
@@ -14,6 +14,7 @@ router.use("/auth", authRoutes);
 router.use("/users", usersRoutes);
 router.use("/loads", loadsRoutes);
 router.use("/assignments", assignmentRoutes);
+// router.use("/sendmessage", sendmessage);
 
 router.use("/driver", driver);
 

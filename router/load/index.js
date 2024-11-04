@@ -1,18 +1,28 @@
 const express = require("express");
 const protect = require("../../middleware/authMiddleware");
 const loadController = require("../../controllers/load/loadController");
+const assignmentController = require("../../controllers/assignments/assignmentController");
+
 
 const router = express.Router();
 
+router.post('/create', protect, loadController.createLoad);
 
-router.post('/step1', protect, loadController.createLoadStep1);
-router.post('/step2', protect, loadController.createLoadStep2);
-router.post('/step3', protect, loadController.createLoadStep3);
+router.get('/details', protect, loadController.getLoadDetails);
 
+router.delete('/deactivate', protect, loadController.deactivateLoad);
 
-router.get('/:loadId', protect, loadController.getLoad);        
-router.put('/:loadId', protect, loadController.updateLoad);     
-router.delete('/:loadId', protect, loadController.deleteLoad);  
-router.get('/', protect, loadController.getUserLoads);  
+// assign load
+router.post('/assign-load', protect, assignmentController.assignLoadToDriver);
+
+// Internet uzilganda barcha location larni bazaga joylash
+router.post('/load-location-all-save', protect, assignmentController.loadLocationBatch);
+
+// Driver ning oxirgi manzilini olish
+router.post('/last-location-driver', protect, assignmentController.getLastLocationDriver);
+
+// Load ning statusini o'zgrtirish
+router.post('/change-load-status', protect, assignmentController.changeLoadStatus);
+
 
 module.exports = router;

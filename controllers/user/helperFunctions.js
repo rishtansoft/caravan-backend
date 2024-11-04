@@ -16,8 +16,7 @@ class HelperFunction {
 
     return result;
   }
-
-  generateUniqueId = function() {
+  generateUniqueId = function () {
     // Masalan, 6 xonali tasodifiy raqam generatsiya qilish
     return Math.floor(100000 + Math.random() * 900000).toString(); // 6 xonali raqam
   }
@@ -44,7 +43,6 @@ class HelperFunction {
     const value = cache.get(key);
     return value;
   }
-
   async generateUniqueUserId() {
     const excludedNumbers = [
       100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000,

@@ -14,9 +14,13 @@ module.exports = new Sequelize(
             //       require: true,
             //       rejectUnauthorized: false,
             //   },
+<<<<<<< HEAD
             // useUTC: false,
+=======
+            useUTC: false,
+>>>>>>> b2c56335480d23a60f289a9c898b4c3b7caa4e63
         },
         timezone: '+05:00'
     }
-); 
+);
 
