@@ -333,7 +333,7 @@ class UserControllers {
 
       // Agar foydalanuvchi topilmasa, xatolik qaytarish
       if (!user) {
-        return next(ApiError.badRequest("User not found"));
+        return next(ApiError.userNotFound("User not found"));
       }
 
       // Kiritilgan parolni saqlangan hash bilan solishtirish

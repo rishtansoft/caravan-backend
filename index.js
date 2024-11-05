@@ -5,11 +5,15 @@ const sequelize = require("./db");
 const { server, socketService, app } = require("./http");
 const sendmessage = require('./router/sendmessage/sendmessage')
 const router = require("./router/index");
+const errorHandler = require('./middleware/ErrorHandlingMiddlware');
 
 app.use('/socket', sendmessage)
 
 // Routes
 app.use("/api", router);
+
+app.use(errorHandler);
+
 
 const start = async () => {
     try {
