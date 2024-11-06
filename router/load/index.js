@@ -24,5 +24,10 @@ router.post('/last-location-driver', protect, assignmentController.getLastLocati
 // Load ning statusini o'zgrtirish
 router.post('/change-load-status', protect, assignmentController.changeLoadStatus);
 
+// user ning barcha load larini olish
+router.post('/get-user-all-loads', protect, loadController.getUserAllLoads);
+
+
+
 
 module.exports = router;

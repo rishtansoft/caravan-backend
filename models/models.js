@@ -234,8 +234,7 @@ module.exports = (sequelize) => {
 
             Load.hasMany(models.Location, { foreignKey: 'load_id' });
             Load.hasOne(models.LoadDetails, { foreignKey: 'load_id' });
-            Load.hasOne(models.LoadDetails, { foreignKey: 'load_id' });
-
+            Load.hasMany(models.Driver, { foreignKey: 'load_id' });
         }
     }
 
@@ -298,24 +297,28 @@ module.exports = (sequelize) => {
             validate: {
                 min: 0,
             },
+            allowNull: true
         },
         length: {
             type: DataTypes.FLOAT,
             validate: {
                 min: 0,
             },
+            allowNull: true
         },
         width: {
             type: DataTypes.FLOAT,
             validate: {
                 min: 0,
             },
+            allowNull: true
         },
         height: {
             type: DataTypes.FLOAT,
             validate: {
                 min: 0,
             },
+            allowNull: true
         },
         car_type_id: {
             type: DataTypes.UUID,
@@ -383,7 +386,7 @@ module.exports = (sequelize) => {
     }
 
     DriverStop.init({
-        assignment_id: {
+        load_id: {
             type: DataTypes.UUID,
             references: {
                 model: "Assignment",
@@ -393,10 +396,23 @@ module.exports = (sequelize) => {
         latitude: {
             type: DataTypes.DECIMAL(10, 8),
             allowNull: false,
+            validate: {
+                min: -90,
+                max: 90,
+            },
         },
         longitude: {
             type: DataTypes.DECIMAL(11, 8),
             allowNull: false,
+            validate: {
+                min: -180,
+                max: 180,
+            },
+        },
+        order: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 1 // 0 -> boshlangich, 1 -> tugash,
         },
         start_time: {
             type: DataTypes.DATE,
@@ -406,13 +422,11 @@ module.exports = (sequelize) => {
             type: DataTypes.DATE,
             allowNull: false,
         },
-        order: {
-            type: DataTypes.INTEGER,
-            defaultValue: 1,
-        },
+        location_name: {
+            type: DataTypes.STRING
+        }
     });
 
-    // LocationCron modeli
     class Location extends Model {
         static associate(models) {
             Location.belongsTo(models.Load, {

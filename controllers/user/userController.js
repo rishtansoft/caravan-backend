@@ -21,6 +21,7 @@ class UserControllers {
           "firstname",
           "lastname",
           "phone",
+          "phone_2",
           "email",
           "birthday",
           "user_img",
@@ -836,7 +837,7 @@ class UserControllers {
 
   async updateOwnerProfile(req, res, next) {
     const { user_id } = req.query;
-    const { lastname, firstname, phone_2, birthday, address } = req.body;
+    const { lastname, firstname, phone_2 = null, birthday, address } = req.body;
 
     try {
       const user = await Users.findByPk(user_id);

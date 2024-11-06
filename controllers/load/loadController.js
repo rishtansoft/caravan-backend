@@ -1,4 +1,4 @@
-const { Users, Location, Load, CarType, LoadDetails } = require("../../models/index");
+const { Users, Location, Load, CarType, LoadDetails, DriverStop } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 
 const Joi = require('joi');
@@ -30,7 +30,7 @@ class LoadController {
 
             result.main = load;
 
-            const locations = await Location.findAll({
+            const locations = await DriverStop.findAll({
                 where: { load_id: load.id }
             });
 
@@ -139,30 +139,27 @@ class LoadController {
                 description,
             });
 
-            await Location.create({
+            await DriverStop.create({
                 load_id: load.id,
-                // location_type: 'origin',
-                // address: origin_location.address,
                 latitude: origin_location.lat,
                 longitude: origin_location.lon,
+                order: 0
             });
 
-            await Location.create({
+            await DriverStop.create({
                 load_id: load.id,
-                // location_type: 'destination',
-                // address: destination_location.address,
                 latitude: destination_location.lat,
                 longitude: destination_location.lon,
+                order: 1
             });
 
             if (Array.isArray(stop_locations) && stop_locations.length > 0) {
                 for (const stop of stop_locations) {
-                    await Location.create({
+                    await DriverStop.create({
                         load_id: load.id,
-                        // location_type: 'stop',
-                        // address: stop.address,
                         latitude: stop.lat,
                         longitude: stop.lon,
+                        order: stop.order
                     });
                 }
             }
@@ -172,7 +169,6 @@ class LoadController {
                 return next(ApiError.badRequest("Car type not found"));
             }
 
-            // 7. Yuk tafsilotlarini saqlash
             await LoadDetails.create({
                 load_id: load.id,
                 weight,
@@ -245,7 +241,7 @@ class LoadController {
 
             await load.update({ status: 'inactive' });
 
-            await Location.update({ status: 'inactive' }, { where: { load_id: load.id } });
+            await DriverStop.update({ status: 'inactive' }, { where: { load_id: load.id } });
 
             await LoadDetails.update({ status: 'inactive' }, { where: { load_id: load.id } });
 
@@ -259,8 +255,41 @@ class LoadController {
         }
     }
 
-}
+    async getUserAllLoads(req, res, next) {
+        const { user_id } = req.params;
 
+        try {
+            const loads = await Load.findAll({
+                where: {
+                    user_id: user_id,
+                    load_status: ['posted', 'assigned', 'picked_up', 'in_transit', 'delivered'],
+                },
+                include: [
+                    {
+                        model: LoadDetails,
+                        attributes: ['car_type_id'],
+                    },
+                    {
+                        model: DriverStop,
+                        where: { order: [0, 1] },
+                        attributes: ['latitude', 'longitude', 'order', 'start_time', 'end_time', 'location_name'],
+                        required: false, 
+                    },
+                ],
+                attributes: ['user_id', 'cargo_type', 'load_status'], 
+            });
+
+            res.json({
+                success: true,
+                message: 'Ma\'lumotlar muvaffaqiyatli olindi',
+                data: loads,
+            });
+        } catch (error) {
+            next(ApiError.internal('Ma\'lumotlarni olishda xatolik yuz berdi'));
+        }
+    }
+
+}
 
 
 module.exports = new LoadController();
