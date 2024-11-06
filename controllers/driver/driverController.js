@@ -39,6 +39,7 @@ class DriverControllers {
                     lastname: user.lastname,
                     email: user.email,
                     phone: user.phone,
+                    phone_2: user.phone_2,
                     role: user.role,
                     user_status: user.user_status,
                     createdAt: user.createdAt,
