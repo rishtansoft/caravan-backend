@@ -1,4 +1,4 @@
-const { Users, Location, Load, CarType, LoadDetails, DriverStop } = require("../../models/index");
+const { Users, Location, Load, CarType, LoadDetails, DriverStop, Assignment } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const { Op } = require('sequelize'); // Op ni import qilish
 
@@ -274,6 +274,7 @@ class LoadController {
                     load_status: {
                         [Op.in]: ['posted', 'assigned', 'picked_up', 'in_transit', 'delivered'],
                     },
+                    status: "active"
                 },
                 attributes: ['id', 'user_id', 'cargo_type', 'load_status'],
             });
@@ -355,6 +356,7 @@ class LoadController {
                     load_status: {
                         [Op.in]: ['posted'],
                     },
+                    status: "active"
                 },
                 attributes: ['id', 'user_id', 'cargo_type', 'load_status'],
             });
