@@ -34,7 +34,7 @@ router.get('/get-all-active-loads', protect, loadController.getAllActiveLoads);
 router.get('/get-driver-loads', protect, loadController.getDriverLoads);
 
 // Driver statusini o'zgartirish
-router.get('/update-driver-status', protect, loadController.updateDriverStatus);
+router.post('/update-driver-status', protect, loadController.updateDriverStatus);
 
 
 
