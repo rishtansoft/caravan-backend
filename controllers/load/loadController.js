@@ -19,9 +19,9 @@ class LoadController {
                 return next(ApiError.badRequest("User not found"));
             }
 
-            if (user.role !== 'cargo_owner') {
-                return next(ApiError.forbidden("Only cargo owners can update loads"));
-            }
+            // if (user.role !== 'cargo_owner') {
+            //     return next(ApiError.forbidden("Only cargo owners can update loads"));
+            // }
 
             const load = await Load.findByPk(load_id);
 
@@ -88,6 +88,7 @@ class LoadController {
                     address: Joi.string().required(),
                     lat: Joi.number().required(),
                     lon: Joi.number().required(),
+                    order: Joi.number().required(),
                 })).optional(),
                 weight: Joi.number().required(),
                 length: Joi.number().required(),
