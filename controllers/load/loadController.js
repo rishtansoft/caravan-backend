@@ -455,6 +455,10 @@ class LoadController {
                 attributes: ['id', 'load_status'], // Faqat kerakli attributlar
             });
 
+            if (!loads) {
+                return next(ApiError.badRequest("Haydovchiga tegishli load lar topilmadi"));
+            }
+
             // 4. Har bir load uchun LoadDetails va DriverStop ma'lumotlarini olish
             const loadData = await Promise.allSettled(
                 loads.map(async (load) => {
@@ -490,7 +494,6 @@ class LoadController {
             console.error("Error fetching driver loads:", error);
             return next(ApiError.internal("Ma'lumotlarni olishda xatolik yuz berdi"));
         }
-
 
     }
 
