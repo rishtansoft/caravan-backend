@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post('/create', protect, loadController.createLoad);
 
-router.get('/details', protect, loadController.getLoadDetails);
+router.post('/details', protect, loadController.getLoadDetails);
 
 router.delete('/deactivate', protect, loadController.deactivateLoad);
 
