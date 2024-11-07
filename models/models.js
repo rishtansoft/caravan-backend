@@ -274,6 +274,11 @@ module.exports = (sequelize) => {
                 ),
                 defaultValue: "posted",
             },
+            is_round_trip: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+                allowNull: true
+            }
         },
         {
             sequelize,
@@ -334,7 +339,7 @@ module.exports = (sequelize) => {
                 key: "id",
             },
         },
-        loading_time: DataTypes.DATE,
+        loading_time: DataTypes.FLOAT,
     }, {
         sequelize,
         tableName: "LoadDetails",
