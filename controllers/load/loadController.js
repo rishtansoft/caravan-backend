@@ -297,7 +297,7 @@ class LoadController {
                         [Op.in]: loadIds
                     }
                 },
-                attributes: ['load_id', 'car_type_id'],
+                attributes: ['load_id', 'car_type_id', "weight"],
             });
 
             // 4. DriverStop ma'lumotlarini olish
@@ -318,6 +318,8 @@ class LoadController {
                 const loadDetail = loadDetails.find(detail => detail.load_id === load.id);
                 const stops = driverStops.filter(stop => stop.load_id === load.id);
 
+                console.log(321, loadDetail);
+                
                 return {
                     ...load.toJSON(),
                     loadDetails: loadDetail || null,
@@ -376,7 +378,7 @@ class LoadController {
                         [Op.in]: loadIds
                     }
                 },
-                attributes: ['load_id', 'car_type_id'],
+                attributes: ['load_id', 'car_type_id', "weight"],
             });
 
             // 4. DriverStop ma'lumotlarini olish

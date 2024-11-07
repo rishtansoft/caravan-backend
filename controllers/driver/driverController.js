@@ -38,6 +38,7 @@ class DriverControllers {
                     firstname: user.firstname,
                     lastname: user.lastname,
                     email: user.email,
+                    birthday: user.birthday,
                     phone: user.phone,
                     phone_2: user.phone_2,
                     role: user.role,
@@ -45,23 +46,7 @@ class DriverControllers {
                     createdAt: user.createdAt,
                     updatedAt: user.updatedAt,
                 },
-                driver: {
-                    id: driverProfile.id,
-                    car_type: driverProfile.car_type_id,
-                    name: driverProfile.name,
-                    tex_pas_ser: driverProfile.tex_pas_ser,
-                    prava_ser: driverProfile.prava_ser,
-                    tex_pas_num: driverProfile.tex_pas_num,
-                    prava_num: driverProfile.prava_num,
-                    car_img: driverProfile.car_img,
-                    prava_img: driverProfile.prava_img,
-                    tex_pas_img: driverProfile.tex_pas_img,
-                    driver_status: driverProfile.driver_status,
-                    is_approved: driverProfile.is_approved,
-                    blocked: driverProfile.blocked,
-                    createdAt: driverProfile.createdAt,
-                    updatedAt: driverProfile.updatedAt,
-                }
+                driver: driverProfile
             });
         } catch (error) {
             console.error(error);
@@ -77,6 +62,7 @@ class DriverControllers {
                 firstname,
                 lastname,
                 email,
+                birthday,
                 phone_2,
                 car_type,
                 car_name: name,
@@ -197,6 +183,7 @@ class DriverControllers {
                     lastname: user.lastname,
                     email: user.email,
                     phone_2: phone_2,
+                    birthday: birthday,
                     phone: user.phone,
                     role: user.role,
                     user_status: user.user_status,
