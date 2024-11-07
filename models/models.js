@@ -233,8 +233,12 @@ module.exports = (sequelize) => {
             Load.hasOne(models.Assignment, { foreignKey: "load_id" });
 
             Load.hasMany(models.Location, { foreignKey: 'load_id' });
-            Load.hasOne(models.LoadDetails, { foreignKey: 'load_id' });
             Load.hasMany(models.Driver, { foreignKey: 'load_id' });
+
+            Load.hasOne(models.LoadDetails, {
+                foreignKey: 'load_id', // LoadDetails modelidagi foreignKey
+                as: 'loadDetails', // alias nomi
+            });
         }
     }
 
@@ -279,7 +283,10 @@ module.exports = (sequelize) => {
 
     class LoadDetails extends BaseModel {
         static associate(models) {
-            LoadDetails.belongsTo(Load, { foreignKey: 'load_id' });
+            LoadDetails.belongsTo(models.Load, {
+                foreignKey: 'load_id',
+                as: 'load', // alias nomi
+            });
             LoadDetails.belongsTo(CarType, { foreignKey: 'car_type_id' });
         }
     }
@@ -381,7 +388,7 @@ module.exports = (sequelize) => {
     // DriverStop modeli
     class DriverStop extends BaseModel {
         static associate(models) {
-            DriverStop.belongsTo(models.Assignment);
+            DriverStop.belongsTo(models.Load, { foreignKey: "load_id" });
         }
     }
 
@@ -389,9 +396,11 @@ module.exports = (sequelize) => {
         load_id: {
             type: DataTypes.UUID,
             references: {
-                model: "Assignment",
+                model: "Load",  // Assignment o'rniga Load
                 key: "id",
             },
+            onDelete: "CASCADE",
+            onUpdate: "CASCADE",
         },
         latitude: {
             type: DataTypes.DECIMAL(10, 8),
@@ -416,11 +425,11 @@ module.exports = (sequelize) => {
         },
         start_time: {
             type: DataTypes.DATE,
-            allowNull: false,
+            allowNull: true,
         },
         end_time: {
             type: DataTypes.DATE,
-            allowNull: false,
+            allowNull: true,
         },
         location_name: {
             type: DataTypes.STRING

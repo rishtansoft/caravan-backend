@@ -47,7 +47,7 @@ class DriverControllers {
                 },
                 driver: {
                     id: driverProfile.id,
-                    car_type: driverProfile.car_type,
+                    car_type: driverProfile.car_type_id,
                     name: driverProfile.name,
                     tex_pas_ser: driverProfile.tex_pas_ser,
                     prava_ser: driverProfile.prava_ser,
@@ -72,7 +72,6 @@ class DriverControllers {
     async updateDriverProfile(req, res, next) {
         try {
             const { user_id } = req.query;
-            console.log(71, user_id);
 
             const {
                 firstname,
@@ -197,6 +196,7 @@ class DriverControllers {
                     firstname: user.firstname,
                     lastname: user.lastname,
                     email: user.email,
+                    phone_2: phone_2,
                     phone: user.phone,
                     role: user.role,
                     user_status: user.user_status,

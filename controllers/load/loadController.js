@@ -1,5 +1,7 @@
 const { Users, Location, Load, CarType, LoadDetails, DriverStop } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
+const { Op } = require('sequelize'); // Op ni import qilish
+
 
 const Joi = require('joi');
 const { socketService } = require('../../http');
@@ -139,18 +141,21 @@ class LoadController {
                 description,
             });
 
+
             await DriverStop.create({
                 load_id: load.id,
                 latitude: origin_location.lat,
                 longitude: origin_location.lon,
-                order: 0
+                order: 0,
+                location_name: origin_location.address
             });
 
             await DriverStop.create({
                 load_id: load.id,
                 latitude: destination_location.lat,
                 longitude: destination_location.lon,
-                order: 1
+                order: 1,
+                location_name: destination_location.address
             });
 
             if (Array.isArray(stop_locations) && stop_locations.length > 0) {
@@ -159,7 +164,8 @@ class LoadController {
                         load_id: load.id,
                         latitude: stop.lat,
                         longitude: stop.lon,
-                        order: stop.order
+                        order: stop.order,
+                        location_name: stop.address
                     });
                 }
             }
@@ -211,8 +217,8 @@ class LoadController {
             });
 
         } catch (error) {
-            console.error("Error creating complete load:", error.stack);
-            next(ApiError.internal("Error creating complete load"));
+            console.error("Error creating complete load:", error);
+            next(ApiError.badRequest("Error creating complete load"));
         }
     }
 
@@ -255,38 +261,237 @@ class LoadController {
         }
     }
 
+
     async getUserAllLoads(req, res, next) {
-        const { user_id } = req.params;
+        const { user_id } = req.query;
 
         try {
+            // 1. Loadlarni olish
             const loads = await Load.findAll({
                 where: {
-                    user_id: user_id,
-                    load_status: ['posted', 'assigned', 'picked_up', 'in_transit', 'delivered'],
+                    user_id,
+                    load_status: {
+                        [Op.in]: ['posted', 'assigned', 'picked_up', 'in_transit', 'delivered'],
+                    },
                 },
-                include: [
-                    {
-                        model: LoadDetails,
-                        attributes: ['car_type_id'],
-                    },
-                    {
-                        model: DriverStop,
-                        where: { order: [0, 1] },
-                        attributes: ['latitude', 'longitude', 'order', 'start_time', 'end_time', 'location_name'],
-                        required: false, 
-                    },
-                ],
-                attributes: ['user_id', 'cargo_type', 'load_status'], 
+                attributes: ['id', 'user_id', 'cargo_type', 'load_status'],
             });
 
-            res.json({
+            // Agar loadlar bo'lmasa, darhol javob qaytarish
+            if (!loads.length) {
+                return res.status(200).json({
+                    success: true,
+                    message: "Ma'lumotlar topilmadi",
+                    data: [],
+                });
+            }
+
+            // 2. Loadlarning IDlarini olish
+            const loadIds = loads.map(load => load.id);
+
+            // 3. LoadDetails ma'lumotlarini olish
+            const loadDetails = await LoadDetails.findAll({
+                where: {
+                    load_id: {
+                        [Op.in]: loadIds
+                    }
+                },
+                attributes: ['load_id', 'car_type_id'],
+            });
+
+            // 4. DriverStop ma'lumotlarini olish
+            const driverStops = await DriverStop.findAll({
+                where: {
+                    load_id: {
+                        [Op.in]: loadIds
+                    },
+                    order: {
+                        [Op.in]: [0, 1]
+                    }
+                },
+                attributes: ['load_id', 'latitude', 'longitude', 'order', 'start_time', 'end_time', 'location_name'],
+            });
+
+            // 5. Loadlar bilan LoadDetails va DriverStoplarni birlashtirish
+            const loadsWithDetailsAndStops = loads.map(load => {
+                const loadDetail = loadDetails.find(detail => detail.load_id === load.id);
+                const stops = driverStops.filter(stop => stop.load_id === load.id);
+
+                return {
+                    ...load.toJSON(),
+                    loadDetails: loadDetail || null,
+                    driverStops: stops,
+                };
+            });
+
+            // 6. Natijani qaytarish
+            return res.status(200).json({
                 success: true,
-                message: 'Ma\'lumotlar muvaffaqiyatli olindi',
-                data: loads,
+                message: "Ma'lumotlar muvaffaqiyatli olindi",
+                data: loadsWithDetailsAndStops,
             });
         } catch (error) {
-            next(ApiError.internal('Ma\'lumotlarni olishda xatolik yuz berdi'));
+            console.error("Error fetching user loads:", error);
+            return next(ApiError.internal("Ma'lumotlarni olishda xatolik yuz berdi"));
         }
+    }
+
+    async getAllActiveLoads(req, res, next) {
+        const { user_id } = req.query;
+
+        try {
+            const user = await Users.findByPk(user_id);
+
+            if (!user) {
+                return next(ApiError.badRequest("Ushbu foydalanuvchi topilmadi"));
+            }
+
+            // 1. Loadlarni olish
+            const loads = await Load.findAll({
+                where: {
+                    load_status: {
+                        [Op.in]: ['posted'],
+                    },
+                },
+                attributes: ['id', 'user_id', 'cargo_type', 'load_status'],
+            });
+
+            // Agar loadlar bo'lmasa, darhol javob qaytarish
+            if (!loads.length) {
+                return res.status(200).json({
+                    success: true,
+                    message: "Ma'lumotlar topilmadi",
+                    data: [],
+                });
+            }
+
+            // 2. Loadlarning IDlarini olish
+            const loadIds = loads.map(load => load.id);
+
+            // 3. LoadDetails ma'lumotlarini olish
+            const loadDetails = await LoadDetails.findAll({
+                where: {
+                    load_id: {
+                        [Op.in]: loadIds
+                    }
+                },
+                attributes: ['load_id', 'car_type_id'],
+            });
+
+            // 4. DriverStop ma'lumotlarini olish
+            const driverStops = await DriverStop.findAll({
+                where: {
+                    load_id: {
+                        [Op.in]: loadIds
+                    },
+                    order: {
+                        [Op.in]: [0, 1]
+                    }
+                },
+                attributes: ['load_id', 'latitude', 'longitude', 'order', 'start_time', 'end_time', 'location_name'],
+            });
+
+            // 5. Loadlar bilan LoadDetails va DriverStoplarni birlashtirish
+            const loadsWithDetailsAndStops = loads.map(load => {
+                const loadDetail = loadDetails.find(detail => detail.load_id === load.id);
+                const stops = driverStops.filter(stop => stop.load_id === load.id);
+
+                return {
+                    ...load.toJSON(),
+                    loadDetails: loadDetail || null,
+                    driverStops: stops,
+                };
+            });
+
+            // 6. Natijani qaytarish
+            return res.status(200).json({
+                success: true,
+                message: "Ma'lumotlar muvaffaqiyatli olindi",
+                data: loadsWithDetailsAndStops,
+            });
+        } catch (error) {
+            console.error("Error fetching user loads:", error);
+            return next(ApiError.internal("Ma'lumotlarni olishda xatolik yuz berdi"));
+        }
+    }
+
+
+    async getDriverLoads(req, res, next) {
+        const { user_id } = req.query;
+
+        try {
+            // 1. Foydalanuvchi mavjudligini va role driver ekanligini tekshirish
+            const user = await Users.findOne({
+                where: { id: user_id, role: 'driver' },
+            });
+
+            if (!user) {
+                return next(ApiError.badRequest("Foydalanuvchi topilmadi yoki u driver emas"));
+            }
+
+            // 2. Ushbu driverga tegishli barcha Assignment larni olish
+            const assignments = await Assignment.findAll({
+                where: { driver_id: user_id },
+                attributes: ['load_id'],
+            });
+
+            const loadIds = assignments.map(assignment => assignment.load_id);
+
+            if (!loadIds.length) {
+                return res.json({
+                    success: true,
+                    message: "Ushbu driverga yuklar tayinlanmagan",
+                    data: [],
+                });
+            }
+
+            // 3. Load jadvalidan faqat kerakli loadlarni olish
+            const loads = await Load.findAll({
+                where: {
+                    id: {
+                        [Op.in]: loadIds,
+                    },
+                },
+                attributes: ['id', 'load_status'], // Faqat kerakli attributlar
+            });
+
+            // 4. Har bir load uchun LoadDetails va DriverStop ma'lumotlarini olish
+            const loadData = await Promise.allSettled(
+                loads.map(async (load) => {
+                    // LoadDetails dan car_type_id ni olish
+                    const loadDetails = await LoadDetails.findOne({
+                        where: { load_id: load.id },
+                        attributes: ['car_type_id'],
+                    });
+
+                    // DriverStop jadvalidan joylashuv ma'lumotlarini olish
+                    const driverStops = await DriverStop.findAll({
+                        where: { load_id: load.id },
+                        attributes: ['latitude', 'longitude', 'order', 'start_time', 'end_time', 'location_name'],
+                    });
+
+                    return {
+                        load_id: load.id,
+                        load_status: load.load_status,
+                        loadDetails: loadDetails ? loadDetails.car_type_id : null,
+                        driverStops,
+                    };
+                })
+            );
+
+            // 5. Natijani qaytarish
+            return res.json({
+                success: true,
+                message: "Ma'lumotlar muvaffaqiyatli olindi",
+                data: loadData,
+            });
+
+        } catch (error) {
+            console.error("Error fetching driver loads:", error);
+            return next(ApiError.internal("Ma'lumotlarni olishda xatolik yuz berdi"));
+        }
+
+
     }
 
 }

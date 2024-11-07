@@ -25,7 +25,13 @@ router.post('/last-location-driver', protect, assignmentController.getLastLocati
 router.post('/change-load-status', protect, assignmentController.changeLoadStatus);
 
 // user ning barcha load larini olish
-router.post('/get-user-all-loads', protect, loadController.getUserAllLoads);
+router.get('/get-user-all-loads', protect, loadController.getUserAllLoads);
+
+// Haydovchi uchun barcha yangi loadlarni olish
+router.get('/get-all-active-loads', protect, loadController.getAllActiveLoads);
+
+// Haydovchi uchun barcha yangi loadlarni olish
+router.get('/get-driver-loads', protect, loadController.getDriverLoads);
 
 
 
