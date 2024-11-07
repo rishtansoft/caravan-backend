@@ -1,4 +1,4 @@
-const { Users, Location, Load, CarType, LoadDetails, DriverStop, Assignment } = require("../../models/index");
+const { Users, Driver, Load, CarType, LoadDetails, DriverStop, Assignment } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const { Op } = require('sequelize'); // Op ni import qilish
 
@@ -500,6 +500,42 @@ class LoadController {
             return next(ApiError.internal("Ma'lumotlarni olishda xatolik yuz berdi"));
         }
 
+    }
+
+    async updateDriverStatus(req, res, next) {
+        const { user_id, driver_status } = req.body;
+    
+        // Dastlab driver_status qiymatini tasdiqlash
+        const validStatuses = ["empty", "at_work", "resting", "offline", "on_break"];
+        if (!validStatuses.includes(driver_status)) {
+            return next(ApiError.badRequest("Noto'g'ri driver_status qiymati"));
+        }
+    
+        try {
+            // Foydalanuvchiga tegishli Driver yozuvini topish
+            const driver = await Driver.findOne({ where: { user_id } });
+            
+            // Driver mavjudligini tekshirish
+            if (!driver) {
+                return next(ApiError.badRequest("Driver topilmadi"));
+            }
+    
+            // driver_status qiymatini yangilash
+            driver.driver_status = driver_status;
+            await driver.save();
+    
+            return res.json({
+                success: true,
+                message: "Driver statusi muvaffaqiyatli yangilandi",
+                data: {
+                    user_id,
+                    driver_status: driver.driver_status,
+                },
+            });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Driver statusini yangilashda xatolik yuz berdi"));
+        }
     }
 
 }
