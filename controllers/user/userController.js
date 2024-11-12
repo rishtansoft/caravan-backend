@@ -21,6 +21,7 @@ class UserControllers {
           "firstname",
           "lastname",
           "phone",
+          "phone_2",
           "email",
           "birthday",
           "user_img",
@@ -139,7 +140,7 @@ class UserControllers {
       const { user_id, phone_2, birthday, role } = req.body;
 
       console.log(req.body);
-      
+
 
       const user = await Users.findOne({
         where: {
@@ -199,9 +200,9 @@ class UserControllers {
         return next(ApiError.badRequest("Birthday was not entered"));
       }
 
-    if (phone_2 && !validateFun.validatePhoneNumber(phone_2)) {
-      return next(ApiError.badRequest("Phone number is not formatted correctly"));
-    }
+      if (phone_2 && !validateFun.validatePhoneNumber(phone_2)) {
+        return next(ApiError.badRequest("Phone number is not formatted correctly"));
+      }
 
       // Unik ID generatsiya qilish
       let uniqueId;
@@ -333,7 +334,7 @@ class UserControllers {
 
       // Agar foydalanuvchi topilmasa, xatolik qaytarish
       if (!user) {
-        return next(ApiError.badRequest("User not found"));
+        return next(ApiError.userNotFound("User not found"));
       }
 
       // Kiritilgan parolni saqlangan hash bilan solishtirish
@@ -831,6 +832,35 @@ class UserControllers {
     } catch (error) {
       console.error('Error replacing avatar:', error);
       return res.status(500).json({ message: 'Error replacing avatar', error: error.message });
+    }
+  }
+
+  async updateOwnerProfile(req, res, next) {
+    const { user_id } = req.query;
+    const { lastname, firstname, phone_2 = null, birthday, address } = req.body;
+
+    try {
+      const user = await Users.findByPk(user_id);
+
+      if (!user) {
+        return next(ApiError.notFound('Foydalanuvchi topilmadi'));
+      }
+
+      await user.update({
+        lastname,
+        firstname,
+        phone_2,
+        birthday,
+        address,
+      });
+
+      res.json({
+        success: true,
+        message: 'Foydalanuvchi muvaffaqiyatli yangilandi',
+        data: user,
+      });
+    } catch (error) {
+      next(ApiError.internal('Foydalanuvchini yangilashda xatolik yuz berdi'));
     }
   }
 

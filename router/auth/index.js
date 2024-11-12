@@ -46,5 +46,8 @@ router.post('/delete-avatar',protect, userController.deleteAvatar);
 // Rasmni almashtirish
 router.post('/replace-avatar',protect, upload.single('file'), userController.replaceAvatar);
 
+// Owner ning shaxsiy ma'lumotlarini o'zgartirish
+router.post('/update-owner-profile',protect, userController.updateOwnerProfile);
+
 
 module.exports = router;

@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post('/create', protect, loadController.createLoad);
 
-router.get('/details', protect, loadController.getLoadDetails);
+router.post('/details', protect, loadController.getLoadDetails);
 
 router.delete('/deactivate', protect, loadController.deactivateLoad);
 
@@ -23,6 +23,20 @@ router.post('/last-location-driver', protect, assignmentController.getLastLocati
 
 // Load ning statusini o'zgrtirish
 router.post('/change-load-status', protect, assignmentController.changeLoadStatus);
+
+// user ning barcha load larini olish
+router.get('/get-user-all-loads', protect, loadController.getUserAllLoads);
+
+// Haydovchi uchun barcha yangi loadlarni olish
+router.get('/get-all-active-loads', protect, loadController.getAllActiveLoads);
+
+// Haydovchi uchun barcha yangi loadlarni olish
+router.get('/get-driver-loads', protect, loadController.getDriverLoads);
+
+// Driver statusini o'zgartirish
+router.post('/update-driver-status', protect, loadController.updateDriverStatus);
+
+
 
 
 module.exports = router;
