@@ -1,6 +1,12 @@
-// routers/admin/index.js
 const express = require("express");
-const { registerAdmin, loginAdmin, validateAdminRegistration, loginAdminValidation } = require("../../controllers/admin/authController");
+const { 
+    adminController, 
+    validateRegistrationFields, 
+    validateLoginFields 
+} = require("../../controllers/admin/authController");
+
+const adminsController = require("../../controllers/admin/adminsController");
+
 
 const {
     createCarType,
@@ -8,18 +14,24 @@ const {
     getCarType,
     updateCarType,
     deleteCarType
-} = require('../../controllers/admin/carTypeController')
+} = require('../../controllers/admin/carTypeController');
 
 const router = express.Router();
 
 // Admin registratsiyasi uchun endpoint
-router.post("/register", validateAdminRegistration, registerAdmin);
+router.post("/register", validateRegistrationFields, adminController.registerAdmin.bind(adminController));
 
 // Admin login route'i
-router.post("/login", loginAdminValidation, loginAdmin);
+router.post("/login", validateLoginFields, adminController.loginAdmin.bind(adminController));
 
+// router.put('/update', adminController.updateAdmin);
+router.put('/update',  adminsController.updateAdmin);
 
-// Car Type routes
+// Get admin profile
+router.get('/profile/:id', adminsController.getAdminProfile);
+
+// Update admin password
+router.put('/password/update/:id', adminsController.updateAdminPassword);
 
 // Create a car type
 router.post('/car-type/create', createCarType);
