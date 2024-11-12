@@ -1,108 +1,16 @@
 const Admin = require("../../models/admin");
+const {  Driver, Assignment } = require("../../models/index");
 const bcrypt = require("bcrypt");
-const { body, validationResult } = require("express-validator");
-const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const ApiError = require("../../error/ApiError");
 
 class AdminsController {
 
-
-    async loginAdmin(req, res, next) {
-        try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return next(ApiError.badRequest("Validation error", errors.array()));
-            }
-
-            const { phone, password } = req.body;
-
-            // Validate admin exists
-            const admin = await this.validateAdmin(phone);
-
-            // Validate password
-            await this.validatePassword(password, admin.password);
-
-            // Create JWT token
-            const token = jwt.sign(
-                { id: admin.id, phone: admin.phone, role: admin.role }, 
-                process.env.SECRET_KEY, 
-                { expiresIn: '1h' }
-            );
-
-            return res.json({ 
-                message: "Muvaffaqiyatli kirish", 
-                id: admin.id, 
-                token 
-            });
-
-        } catch (error) {
-            console.error(error);
-            return next(
-                error instanceof ApiError 
-                    ? error 
-                    : ApiError.internal("Login jarayonida xatolik: " + error.message)
-            );
-        }
-    }
-
-    async registerAdmin(req, res, next) {
-        try {
-            console.log("ss ");
-            
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return next(ApiError.badRequest("Validation error", errors.array()));
-            }
-
-            const { phone, phone_2, lastname, firstname, address, role, password } = req.body;
-
-            // Check if admin already exists
-            const existingAdmin = await Admin.findOne({ where: { phone } });
-            console.log(Admin);
-            
-            if (existingAdmin) {
-                return next(ApiError.badRequest("Bu telefon raqami bilan admin allaqachon mavjud"));
-            }
-
-            // Hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            // Create admin
-            const newAdmin = await Admin.create({
-                phone,
-                phone_2,
-                lastname,
-                firstname,
-                address,
-                password: hashedPassword,
-                role
-            });
-
-            return res.status(201).json({
-                message: "Admin muvaffaqiyatli ro'yxatdan o'tkazildi",
-                id: newAdmin.id
-            });
-
-        } catch (error) {
-            console.error(error);
-            return next(
-                error instanceof ApiError 
-                    ? error 
-                    : ApiError.internal("Adminni ro'yxatdan o'tkazishda xatolik....: " + error.message)
-            );
-        }
-    }
-
     async updateAdmin (req, res, next) {
         try {
-            const adminId = req.query.id;  // Access the ID from the query string
+            const adminId = req.query.id;  
             const { firstname, lastname, phone, phone_2, address, email, password } = req.body;
-            console.log(adminId);
-
-            const allAdmins = await Admin.findAll({ attributes: ['id', 'firstname', 'lastname', 'phone'] });
-            console.log("All Admins:", allAdmins);  // Log all admins for verification
-
-
+            
             if (!adminId) {
                 return next(ApiError.badRequest('Admin ID is required'));
             }
@@ -121,17 +29,17 @@ class AdminsController {
         }
     };
 
-    async getAdminProfile (req, res, next)  {
-        try {
-            const admin = await Admin.findByPk(req.user.id, {
-                attributes: ['id', 'firstname', 'lastname', 'phone', 'phone_2', 'address', 'email']
+   async getAdminProfile (req, res, next)  {
+         try {
+            const admin = await Admin.findByPk(req.params.id , {
+                attributes: ['id', 'firstname', 'lastname', 'phone', 'phone_2', 'address']
             });
             if (!admin) return next(ApiError.notFound('Admin not found'));
 
             return res.json(admin);
         } catch (error) {
             console.error(error);
-            next(ApiError.internal("Admin profilini olishda xatolik: " + error.message));
+            next(ApiError.internal("Error retrieving admin profile: " + error.message));
         } 
     }
 
@@ -139,8 +47,7 @@ class AdminsController {
         try {
             const { oldPassword, newPassword } = req.body;
 
-            // Password update logic
-            const admin = await Admin.findByPk(req.user.id);
+            const admin = await Admin.findByPk(req.params.id);
             if (!admin) return next(ApiError.notFound('Admin not found'));
 
             const isMatch = await bcrypt.compare(oldPassword, admin.password);
@@ -153,6 +60,104 @@ class AdminsController {
         } catch (error) {
             console.error(error);
             next(ApiError.internal("Parolni yangilashda xatolik: " + error.message));
+        }
+    }
+
+    async getAllDrivers(req, res, next) {
+        try {
+            console.log("ss ");
+            
+            const drivers = await Driver.findAll();
+            res.json(drivers);
+            
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error fetching drivers: " + error.message));
+        }
+    }
+
+    async getDrivers(req, res, next) {
+        try {
+             const {
+                name,
+                driver_status,
+                car_type_id,
+                is_approved,
+                page = 1,
+                limit = 10
+            } = req.query;
+
+            const whereClause = {};
+;
+            if(name) whereClause.name = { [Op.like]: `%${name}%` };
+            if(driver_status) whereClause.driver_status = driver_status;
+            if(car_type_id) whereClause.car_type_id = car_type_id;
+            if(is_approved !== undefined) whereClause.is_approved  = is_approved === "true";
+
+            const offset = (page - 1) * limit;
+            const drivers = await Driver.findAndCountAll({
+                where: whereClause,
+                limit: parseInt(limit),
+                offset,
+            });
+
+            res.json({
+                data: drivers.rows,
+                totalDrivers: drivers.count,
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(drivers.count / limit),
+            });
+            
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error fetching drivers: " + error.message));
+        }
+    }
+
+    async getDriverById(req, res, next) {
+        try {
+            const driver = await Driver.findByPk(req.params.driverId);
+            if (!driver) return next(ApiError.notFound("Driver not found"));
+            res.json(driver);
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error fetching driver: " + error.message));
+        }
+    }
+
+    async deleteDriver(req, res, next) {
+        try {
+            const { driverId } = req.params;
+            const deleted = await Driver.destroy({ where: { id: driverId } });
+            if (!deleted) return next(ApiError.notFound("Driver not found"));
+            res.json({ message: "Driver deleted successfully" });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error deleting driver: " + error.message));
+        }
+    }
+
+    async getDriverOrders(req, res, next) {
+        try {
+            const { driverId } = req.params;
+            const orders = await Assignment.findAll({ where: { driverId } });
+            if (!orders.length) return next(ApiError.notFound("No orders found for this driver"));
+            res.json(orders);
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error fetching driver orders: " + error.message));
+        }
+    }
+
+    async blockDriver(req, res, next) {
+        try {
+            const { driverId } = req.params;
+            const driver = await Driver.findByIdAndUpdate(driverId, { blocked: true }, { new: true });
+            if (!driver) return res.status(404).json({ error: 'Driver not found' });
+            res.json({ message: 'Driver blocked successfully', driver });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Error fetching driver orders: " + error.message));
         }
     }
 }

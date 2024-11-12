@@ -562,7 +562,7 @@ Location.init({
     {
       sequelize,
       tableName: "user_registers",
-      timestamps: true, // Sequelize avtomatik tarzda vaqt muhrlarini boshqaradi
+      timestamps: true, 
     }
   );
 

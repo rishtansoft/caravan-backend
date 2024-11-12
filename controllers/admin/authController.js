@@ -110,6 +110,9 @@ class AdminController {
                 return next(ApiError.badRequest("Validation error", errors.array()));
             }
 
+            const allAdmins = await Admin.findAll({ attributes: ['id', 'firstname', 'lastname', 'phone'] });
+            console.log("All Admins:", allAdmins); 
+
             const { phone, phone_2, lastname, firstname, address, role, password } = req.body;
 
             // Check if admin already exists
@@ -172,40 +175,7 @@ class AdminController {
         }
     };
 
-    async getAdminProfile (req, res, next)  {
-        try {
-            const admin = await Admin.findByPk(req.user.id, {
-                attributes: ['id', 'firstname', 'lastname', 'phone', 'phone_2', 'address', 'email']
-            });
-            if (!admin) return next(ApiError.notFound('Admin not found'));
 
-            return res.json(admin);
-        } catch (error) {
-            console.error(error);
-            next(ApiError.internal("Admin profilini olishda xatolik: " + error.message));
-        } 
-    }
-
-    async updateAdminPassword (req, res, next) {
-        try {
-            const { oldPassword, newPassword } = req.body;
-
-            // Password update logic
-            const admin = await Admin.findByPk(req.user.id);
-            if (!admin) return next(ApiError.notFound('Admin not found'));
-
-            const isMatch = await bcrypt.compare(oldPassword, admin.password);
-            if (!isMatch) return next(ApiError.badRequest('Old password is incorrect'));
-
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-            await admin.update({ password: hashedPassword });
-
-            return res.json({ message: "Parol yangilandi" });
-        } catch (error) {
-            console.error(error);
-            next(ApiError.internal("Parolni yangilashda xatolik: " + error.message));
-        }
-    }
 }
 
 const adminController = new AdminController();

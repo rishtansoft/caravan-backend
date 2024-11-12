@@ -24,23 +24,14 @@ router.post("/register", validateRegistrationFields, adminController.registerAdm
 // Admin login route'i
 router.post("/login", validateLoginFields, adminController.loginAdmin.bind(adminController));
 
-// router.put('/:adminId/update', (req, res) => {
-//     res.json({ message: "Route is working" });
-// });
-
 // router.put('/update', adminController.updateAdmin);
 router.put('/update',  adminsController.updateAdmin);
 
-
-// Update admin details
-router.put('/:adminId/update', adminController.updateAdmin.bind(adminController));
-
 // Get admin profile
-router.get('/profile', adminController.getAdminProfile);
+router.get('/profile/:id', adminsController.getAdminProfile);
 
 // Update admin password
-router.put('/password/update', adminController.updateAdminPassword);
-
+router.put('/password/update/:id', adminsController.updateAdminPassword);
 
 // Create a car type
 router.post('/car-type/create', createCarType);
