@@ -1,4 +1,4 @@
-const { Users, Driver, CarType } = require("../../models/index");
+const { Users, Driver, CarType, Assignment } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const utilFunctions = require('../../utils/index');
 
@@ -167,7 +167,7 @@ class DriverControllers {
             });
 
             console.log(169, phone_2, birthday, car_type);
-            
+
             await user.update({
                 phone_2: phone_2 || user.phone_2,
                 birthday: birthday || driverProfile.birthday,
@@ -218,190 +218,236 @@ class DriverControllers {
     // Tex passport image
     async uploadTexPassportImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-            const file = req.file;  
-    
+            const { user_id } = req.query;
+            const file = req.file;
+
             if (!file || !user_id) {
                 return res.status(400).json({ message: 'User ID and file are required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
+
             const fileUrl = await uploadFile(file, configService);
-    
+
             await driver.update({ tex_pas_img: fileUrl });
-    
+
             return res.json({
                 message: 'Technical passport image uploaded successfully',
                 tex_pas_img: fileUrl
             });
         } catch (error) {
             console.error('Error uploading technical passport image:', error);
-            next(error);  
+            next(error);
         }
     }
 
     async deleteTexPassportImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-    
+            const { user_id } = req.query;
+
             if (!user_id) {
                 return res.status(400).json({ message: 'User ID is required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
-            const texPasImgUrl = driver.tex_pas_img;  
+
+            const texPasImgUrl = driver.tex_pas_img;
             if (!texPasImgUrl) {
                 return res.status(400).json({ message: 'No technical passport image found to delete' });
             }
-    
+
             await deleteFile(texPasImgUrl, configService);
-    
+
             await driver.update({ tex_pas_img: null });
-    
+
             return res.json({
                 message: 'Technical passport image deleted successfully',
             });
         } catch (error) {
             console.error('Error deleting technical passport image:', error);
-            next(error);  
+            next(error);
         }
     }
 
     async replaceTexPassportImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-            const file = req.file;  
-    
+            const { user_id } = req.query;
+            const file = req.file;
+
             if (!file || !user_id) {
                 return res.status(400).json({ message: 'File and user ID are required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
-            const oldTexPasImgUrl = driver.tex_pas_img;  
-    
+
+            const oldTexPasImgUrl = driver.tex_pas_img;
+
             const newTexPasImgUrl = await uploadFile(file, configService);
-    
+
             if (oldTexPasImgUrl) {
                 await deleteFile(oldTexPasImgUrl, configService);
             }
-    
+
             await driver.update({ tex_pas_img: newTexPasImgUrl });
-    
+
             return res.json({
                 message: 'Technical passport image replaced successfully',
                 new_tex_pas_img: newTexPasImgUrl,
             });
         } catch (error) {
             console.error('Error replacing technical passport image:', error);
-            next(error);  
+            next(error);
         }
     }
 
     // Prava image
     async uploadPravaImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-            const file = req.file;  
-            
+            const { user_id } = req.query;
+            const file = req.file;
+
             console.log(323, user_id, file);
-            
+
             if (!file || !user_id) {
                 return res.status(400).json({ message: 'User ID and file are required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
+
             const fileUrl = await uploadFile(file, configService);
-    
+
             await driver.update({ prava_img: fileUrl });
-    
+
             return res.json({
                 message: 'Technical passport image uploaded successfully',
                 prava_img: fileUrl
             });
         } catch (error) {
             console.error('Error uploading technical passport image:', error);
-            next(error);  
+            next(error);
         }
     }
 
     async deletePravaImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-    
+            const { user_id } = req.query;
+
             if (!user_id) {
                 return res.status(400).json({ message: 'User ID is required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
-            const texPasImgUrl = driver.prava_img;  
+
+            const texPasImgUrl = driver.prava_img;
             if (!texPasImgUrl) {
                 return res.status(400).json({ message: 'No technical passport image found to delete' });
             }
-    
+
             await deleteFile(texPasImgUrl, configService);
-    
+
             await driver.update({ prava_img: null });
-    
+
             return res.json({
                 message: 'Technical passport image deleted successfully',
             });
         } catch (error) {
             console.error('Error deleting technical passport image:', error);
-            next(error);  
+            next(error);
         }
     }
 
     async replacePravaImage(req, res, next) {
         try {
-            const { user_id } = req.query;  
-            const file = req.file;  
-    
+            const { user_id } = req.query;
+            const file = req.file;
+
             if (!file || !user_id) {
                 return res.status(400).json({ message: 'File and user ID are required' });
             }
-    
+
             const driver = await Driver.findOne({ where: { user_id } });
             if (!driver) {
                 return res.status(404).json({ message: 'Driver not found' });
             }
-    
-            const oldTexPasImgUrl = driver.prava_img;  
-    
+
+            const oldTexPasImgUrl = driver.prava_img;
+
             const newTexPasImgUrl = await uploadFile(file, configService);
-    
+
             if (oldTexPasImgUrl) {
                 await deleteFile(oldTexPasImgUrl, configService);
             }
-    
+
             await driver.update({ prava_img: newTexPasImgUrl });
-    
+
             return res.json({
                 message: 'Technical passport image replaced successfully',
                 new_prava_img: newTexPasImgUrl,
             });
         } catch (error) {
             console.error('Error replacing technical passport image:', error);
-            next(error);  
+            next(error);
+        }
+    }
+
+    async driverisInRoad(req, res, next) {
+        try {
+            const { user_id } = req.query;
+
+            const user = await Users.findByPk(user_id);
+
+            if (!user) {
+                return next(ApiError.badRequest("User not found"));
+            }
+
+            if (user.role !== "driver") {
+                return next(ApiError.badRequest("The user is not a driver"));
+            }
+
+            const driverProfile = await Driver.findOne({
+                where: { user_id },
+            });
+
+            if (!driverProfile) {
+                return next(ApiError.badRequest("Driver profile not found for this user"));
+            }
+
+            const assignment = await Assignment.findOne({
+                where: {
+                    driver_id: driverProfile.id,
+                    assignment_status: {
+                        [Op.in]: ['assigned', 'picked_up', 'in_transit']
+                    }
+                }
+            });
+
+            if (assignment) {
+                
+            } else {
+                return res.json({
+                    message: 'Driver is not in road',
+                });
+            }
+
+
+        } catch (error) {
+            console.error(error);
+            return next(ApiError.internal("Error updating driver profile: " + error.message));
         }
     }
 

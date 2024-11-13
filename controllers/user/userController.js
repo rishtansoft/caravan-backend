@@ -382,7 +382,7 @@ class UserControllers {
         const driverInfo = await Driver.findOne({ where: { user_id } });
 
         if (!driverInfo) {
-
+          return next(ApiError.badRequest("Driver topilmadi"));
         }
 
         // Kerakli ma'lumotlarni tekshirish
@@ -409,9 +409,9 @@ class UserControllers {
         if (!prava_num) {
           return res.json({ success: false, message: "Haydovchilik guvohnomasi raqami kiritilmagan" });
         }
-        if (is_approved !== true) {
-          return res.json({ success: false, message: "Haydovchilik ma'lumotlari tasdiqlanmagan" });
-        }
+        // if (is_approved !== true) {
+        //   return res.json({ success: false, message: "Haydovchilik ma'lumotlari tasdiqlanmagan" });
+        // }
         if (blocked === true) {
           return res.json({ success: false, message: "Haydovchi bloklangan" });
         }
