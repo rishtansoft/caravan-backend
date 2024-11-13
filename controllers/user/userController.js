@@ -393,7 +393,7 @@ class UserControllers {
           prava_num,
           is_approved,
           blocked,
-          car_type
+          car_type_id
         } = driverInfo;
 
         // Ma'lumotlarni tekshirish
@@ -415,7 +415,7 @@ class UserControllers {
         if (blocked === true) {
           return res.json({ success: false, message: "Haydovchi bloklangan" });
         }
-        if (!car_type) {
+        if (!car_type_id) {
           return res.json({ success: false, message: "Avtomobil turi kiritilmagan" });
         }
 
