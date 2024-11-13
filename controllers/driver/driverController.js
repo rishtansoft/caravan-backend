@@ -166,13 +166,20 @@ class DriverControllers {
                 email: email || user.email
             });
 
+            console.log(169, phone_2, birthday, car_type);
+            
+            await user.update({
+                phone_2: phone_2 || user.phone_2,
+                birthday: birthday || driverProfile.birthday,
+            })
+
             await driverProfile.update({
-                car_type: car_type || driverProfile.car_type,
+                car_type_id: car_type || driverProfile.car_type_id,
                 name: name || driverProfile.name,
                 tex_pas_ser: tex_pas_ser || driverProfile.tex_pas_ser,
                 prava_ser: prava_ser || driverProfile.prava_ser,
                 tex_pas_num: tex_pas_num || driverProfile.tex_pas_num,
-                prava_num: prava_num || driverProfile.prava_num
+                prava_num: prava_num || driverProfile.prava_num,
             });
 
             return res.json({
@@ -190,7 +197,7 @@ class DriverControllers {
                 },
                 driver: {
                     id: driverProfile.id,
-                    car_type: driverProfile.car_type,
+                    car_type: driverProfile.car_type_id,
                     name: driverProfile.name,
                     tex_pas_ser: driverProfile.tex_pas_ser,
                     prava_ser: driverProfile.prava_ser,

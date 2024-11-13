@@ -510,7 +510,8 @@ class LoadController {
         if (!validStatuses.includes(driver_status)) {
             return next(ApiError.badRequest("Noto'g'ri driver_status qiymati"));
         }
-    
+
+
         try {
             // Foydalanuvchiga tegishli Driver yozuvini topish
             const driver = await Driver.findOne({ where: { user_id } });
@@ -519,6 +520,20 @@ class LoadController {
             if (!driver) {
                 return next(ApiError.badRequest("Driver topilmadi"));
             }
+
+            const assignment = await Assignment.findOne({
+                where: {
+                  driver_id: driver.id,
+                  assignment_status: {
+                    [Op.in]: ['assigned', 'picked_up', 'in_transit']
+                  }
+                }
+              });
+              
+              if (assignment) {
+                return next(ApiError.badRequest("Haydovchi safar yangi yuk olishi uchun safarni yakunlashi kerak"));
+              }
+              
     
             // driver_status qiymatini yangilash
             driver.driver_status = driver_status;

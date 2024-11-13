@@ -1,5 +1,6 @@
 const { Assignment, Driver, Load, Users } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
+const { Op } = require('sequelize');
 
 
 class AssignmentController {
@@ -21,6 +22,20 @@ class AssignmentController {
       if (!load) {
         return res.status(404).json({ error: "Load not found" });
       }
+
+      const assign = await Assignment.findOne({
+        where: {
+          driver_id: driver.id,
+          assignment_status: {
+            [Op.in]: ['assigned', 'picked_up', 'in_transit']
+          }
+        }
+      });
+      
+      if (assign) {
+        return res.status(404).json({ error: "Haydovchi safarni yakunlamasdan boshqa yuk ololmaydi!" });
+      }
+      
 
       // Assignment yaratish
       const assignment = await Assignment.create({
