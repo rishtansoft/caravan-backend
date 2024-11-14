@@ -31,4 +31,13 @@ router.post("/replace-prava", protect, upload.single('file'), driverController.r
 // yukni olishga yetib kelganligini tasdiqlash
 router.post("/arrived-luggage", protect, driverController.arrivedLuggage);
 
+// yukni olishga yetib kelganligini tasdiqlash
+router.post("/start-loading", protect, driverController.startLoading);
+
+// yukning statusini olish
+router.get("/load-status", protect, driverController.getLoadStatus);
+
+// yuklashni tamomlash uchun api
+router.get("/finish-pickup-load", protect, driverController.finishLoadPickup);
+
 module.exports = router;

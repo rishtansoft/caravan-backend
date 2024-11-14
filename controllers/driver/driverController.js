@@ -500,6 +500,118 @@ class DriverControllers {
             return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
         }
     }
+
+    async startLoading(req, res, next) {
+        const { user_id, load_id} = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.allSettled([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            // Holatlarni yangilash
+            await Promise.all([
+                assignment.update({ assignment_status: "picked_up" }),
+                load.update({ load_status: "picked_up" })
+            ]);
+    
+            return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
+
+    async getLoadStatus(req, res, next) {
+        const { user_id, load_id} = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.allSettled([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            return res.status(200).json({ success: true, status: load.load_status});
+
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
+
+    async finishLoadPickup(req, res, next) {
+        const { user_id, load_id} = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.allSettled([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            // Holatlarni yangilash
+            await Promise.all([
+                assignment.update({ assignment_status: "in_transit" }),
+                load.update({ load_status: "in_transit" })
+            ]);
+    
+            return res.status(200).json({ success: true, message: 'Yuklash nihoyasiga yetdi.' });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
     
 
 }
