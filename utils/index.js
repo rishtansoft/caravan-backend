@@ -50,7 +50,7 @@ class UtilFunctions {
                 forcePathStyle: true,
                 region: configService.get('S3_REGION'),
             });
-            
+
             const fileName = `caravan/${Date.now()}.png`;
             let contentType = file.mimetype;
 
@@ -85,7 +85,7 @@ class UtilFunctions {
     async deleteFile(fileUrl, configService) {
         try {
             const fileName = fileUrl.split(`${configService.get('S3_ENDPOINT')}/${configService.get('S3_BUCKET_NAME')}/`)[1];
-            
+
             const s3Client = new S3Client({
                 region: configService.get('S3_REGION'),
                 credentials: {
@@ -95,15 +95,15 @@ class UtilFunctions {
                 endpoint: configService.get('S3_ENDPOINT'),
                 forcePathStyle: true,
             });
-    
+
             const deleteParams = {
                 Bucket: configService.get('S3_BUCKET_NAME'),
                 Key: fileName,
             };
-    
+
             const command = new DeleteObjectCommand(deleteParams);
-            const response = await s3Client.send(command);  
-            
+            const response = await s3Client.send(command);
+
             return {
                 message: 'File deleted successfully',
                 response,
@@ -112,6 +112,33 @@ class UtilFunctions {
             console.error("Error deleting file from S3:", error);
             throw new Error(`Failed to delete file from S3: ${error.message}`);
         }
+    }
+
+    calculateDistance(startLocation, endLocation) {
+        const R = 6371000;
+        const lat1 = startLocation.latitude;
+        const lon1 = startLocation.longitude;
+        const lat2 = endLocation.latitude;
+        const lon2 = endLocation.longitude;
+
+        // Burchaklarni radianlarga aylantirish
+        const toRadians = (degree) => (degree * Math.PI) / 180;
+
+        const dLat = toRadians(lat2 - lat1);
+        const dLon = toRadians(lon2 - lon1);
+
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRadians(lat1)) *
+            Math.cos(toRadians(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        // Masofa (metrda)
+        const distance = R * c;
+        return distance;
     }
 
 }

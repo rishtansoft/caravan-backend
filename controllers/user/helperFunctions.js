@@ -14,7 +14,8 @@ class HelperFunction {
       result += characters[randomIndex];
     }
 
-    return result;
+    // return result;
+    return 1111;
   }
   generateUniqueId = function () {
     // Masalan, 6 xonali tasodifiy raqam generatsiya qilish
@@ -76,6 +77,8 @@ class HelperFunction {
 
     return userId;
   }
+
+  
 }
 
 module.exports = new HelperFunction();

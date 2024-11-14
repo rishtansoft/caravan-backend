@@ -28,4 +28,7 @@ router.delete("/delete-prava", protect, driverController.deletePravaImage);
 // replace prava image
 router.post("/replace-prava", protect, upload.single('file'), driverController.replacePravaImage);
 
+// yukni olishga yetib kelganligini tasdiqlash
+router.post("/arrived-luggage", protect, driverController.arrivedLuggage);
+
 module.exports = router;

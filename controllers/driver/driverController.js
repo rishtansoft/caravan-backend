@@ -1,9 +1,10 @@
-const { Users, Driver, CarType, Assignment } = require("../../models/index");
+const { Users, Driver, CarType, Assignment, Load } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const utilFunctions = require('../../utils/index');
 
 const configService = require('../../config/configureService');
 const { uploadFile, deleteFile } = require('../../utils/index');
+
 
 class DriverControllers {
     async getProfile(req, res, next) {
@@ -437,7 +438,7 @@ class DriverControllers {
             });
 
             if (assignment) {
-                
+
             } else {
                 return res.json({
                     message: 'Driver is not in road',
@@ -450,6 +451,56 @@ class DriverControllers {
             return next(ApiError.internal("Error updating driver profile: " + error.message));
         }
     }
+
+    async arrivedLuggage(req, res, next) {
+        const { user_id, load_id, current_longitude, current_latitude, start_longitude, start_latitude } = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.allSettled([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            // Masofani hisoblash va tekshirish
+            const distance = utilFunctions.calculateDistance(
+                { latitude: current_latitude, longitude: current_longitude },
+                { latitude: start_latitude, longitude: start_longitude }
+            );
+    
+            if (distance >= 150 || !distance) {
+                return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
+            }
+    
+            // Holatlarni yangilash
+            await Promise.all([
+                assignment.update({ assignment_status: "arrived_picked_up" }),
+                load.update({ load_status: "arrived_picked_up" })
+            ]);
+    
+            return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
+    
 
 }
 
