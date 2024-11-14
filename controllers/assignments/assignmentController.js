@@ -15,13 +15,22 @@ class AssignmentController {
         return res.status(404).json({ error: "Load already assigned" });
       }
 
+      console.log(18);
+      
+
       if (!driver) {
         return res.status(404).json({ error: "Driver not found" });
       }
 
+      console.log(25);
+      
+
       if (!load) {
         return res.status(404).json({ error: "Load not found" });
       }
+
+      console.log(32);
+      
 
       const assign = await Assignment.findOne({
         where: {
@@ -31,10 +40,16 @@ class AssignmentController {
           }
         }
       });
+
+      console.log(44);
+      
       
       if (assign) {
         return res.status(404).json({ error: "Haydovchi safarni yakunlamasdan boshqa yuk ololmaydi!" });
       }
+
+      console.log(51);
+      
       
 
       // Assignment yaratish
