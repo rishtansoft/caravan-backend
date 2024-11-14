@@ -1,4 +1,4 @@
-const { Users, Driver, CarType, Assignment, Load } = require("../../models/index");
+const { Users, Driver, CarType, Assignment, Load, DriverStop } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const utilFunctions = require('../../utils/index');
 
@@ -406,51 +406,65 @@ class DriverControllers {
         }
     }
 
-    async driverisInRoad(req, res, next) {
-        try {
-            const { user_id } = req.query;
+    // async driverisInRoad(req, res, next) {
+    //     try {
+    //         const { user_id } = req.query;
 
-            const user = await Users.findByPk(user_id);
+    //         const user = await Users.findByPk(user_id);
 
-            if (!user) {
-                return next(ApiError.badRequest("User not found"));
-            }
+    //         if (!user) {
+    //             return next(ApiError.badRequest("User not found"));
+    //         }
 
-            if (user.role !== "driver") {
-                return next(ApiError.badRequest("The user is not a driver"));
-            }
+    //         if (user.role !== "driver") {
+    //             return next(ApiError.badRequest("The user is not a driver"));
+    //         }
 
-            const driverProfile = await Driver.findOne({
-                where: { user_id },
-            });
+    //         const driverProfile = await Driver.findOne({
+    //             where: { user_id },
+    //         });
 
-            if (!driverProfile) {
-                return next(ApiError.badRequest("Driver profile not found for this user"));
-            }
+    //         if (!driverProfile) {
+    //             return next(ApiError.badRequest("Driver profile not found for this user"));
+    //         }
 
-            const assignment = await Assignment.findOne({
-                where: {
-                    driver_id: driverProfile.id,
-                    assignment_status: {
-                        [Op.in]: ['assigned', 'picked_up', 'in_transit']
-                    }
-                }
-            });
+    //         const assignment = await Assignment.findOne({
+    //             where: {
+    //                 driver_id: driverProfile.id,
+    //                 assignment_status: {
+    //                     [Op.in]: ['in_transit', 'in_transit_get_load']
+    //                 }
+    //             }
+    //         });
 
-            if (assignment) {
+    //         if (assignment) {
+    //             const driverStop = DriverStop.findOne({where: {load_id: assignment.load_id}});
 
-            } else {
-                return res.json({
-                    message: 'Driver is not in road',
-                });
-            }
+    //             if (!driverStop) {
+    //                 return res.status(404).json({ message: 'Load not found', success: false });
+    //             }
+
+    //             if (assignment.assignment_status == 'in_transit') {
+
+    //             }
+
+    //             if (assignment.assignment_status == 'in_transit_get_load') {
+
+    //             }
 
 
-        } catch (error) {
-            console.error(error);
-            return next(ApiError.internal("Error updating driver profile: " + error.message));
-        }
-    }
+
+
+    //         }
+
+    //         return res.status(200).json({ message: 'Driver is not on road', success: false });
+
+
+    //     } catch (error) {
+    //         console.error(error);
+    //         return next(ApiError.internal("Error updating driver profile: " + error.message));
+    //     }
+    // }
 
     async arrivedLuggage(req, res, next) {
         const { user_id, load_id, current_longitude, current_latitude, start_longitude, start_latitude } = req.body;
@@ -495,6 +509,45 @@ class DriverControllers {
             ]);
     
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
+
+    async arrivingToGetLoad(req, res, next) {
+        const { user_id, load_id} = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.allSettled([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            // Holatlarni yangilash
+            await Promise.all([
+                assignment.update({ assignment_status: "in_transit_get" }),
+                load.update({ load_status: "in_transit_get" })
+            ]);
+    
+            return res.status(200).json({ success: true, message: 'Haydovchi yukni olish uchun yolga chiqdi' });
         } catch (error) {
             console.error("Error updating driver status:", error);
             return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));

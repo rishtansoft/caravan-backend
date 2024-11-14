@@ -268,6 +268,7 @@ module.exports = (sequelize) => {
                 type: DataTypes.ENUM(
                     "posted", // yangi yuk elon qilingan
                     "assigned", // haydovchiga tayinlangan
+                    "in_transit_get_load", // yukni olishga yolda kelyapti
                     "arrived_picked_up", // yukni olishga yetib keldi
                     "picked_up", // yuklangmoqda
                     "in_transit", // yolda
@@ -376,6 +377,7 @@ module.exports = (sequelize) => {
                 type: DataTypes.ENUM(
                     "assigned",
                     "arrived_picked_up", // yukni olishga yetib keldi
+                    "in_transit_get_load", // yukni olishga yolda kelyapti
                     "picked_up",
                     "in_transit",
                     "delivered"
