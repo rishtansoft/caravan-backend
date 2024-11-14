@@ -471,7 +471,7 @@ class DriverControllers {
     
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
-            const [driver, load, assignment] = await Promise.allSettled([
+            const [driver, load, assignment] = await Promise.all([
                 Driver.findOne({ where: { user_id } }),
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
