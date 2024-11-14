@@ -476,6 +476,8 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
+
+            console.log(480, assignment);
     
             // Haydovchi topilmasa
             if (!driver) {

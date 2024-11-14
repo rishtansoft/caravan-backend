@@ -262,7 +262,6 @@ class LoadController {
         }
     }
 
-
     async getUserAllLoads(req, res, next) {
         const { user_id } = req.query;
 
@@ -551,8 +550,6 @@ class LoadController {
             return next(ApiError.internal("Driver statusini yangilashda xatolik yuz berdi"));
         }
     }
-
-    
 
 }
 
