@@ -40,7 +40,7 @@ router.get("/load-status", protect, driverController.getLoadStatus);
 // yuklashni tamomlash uchun api
 router.get("/finish-pickup-load", protect, driverController.finishLoadPickup);
 
-// yuklashni tamomlash uchun api
+// yukni olishga ketayotgani haqida
 router.get("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
 
 module.exports = router;

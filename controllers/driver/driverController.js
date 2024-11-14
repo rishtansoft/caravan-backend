@@ -543,8 +543,8 @@ class DriverControllers {
     
             // Holatlarni yangilash
             await Promise.all([
-                assignment.update({ assignment_status: "in_transit_get" }),
-                load.update({ load_status: "in_transit_get" })
+                assignment.update({ assignment_status: "in_transit_get_load" }),
+                load.update({ load_status: "in_transit_get_load" })
             ]);
     
             return res.status(200).json({ success: true, message: 'Haydovchi yukni olish uchun yolga chiqdi' });
