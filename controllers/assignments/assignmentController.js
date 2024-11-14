@@ -14,22 +14,16 @@ class AssignmentController {
       if (load.load_status == 'assigned' || load.load_status == 'picked_up' || load.load_status == 'in_transit' || load.load_status == 'delivered') {
         return res.status(404).json({ error: "Load already assigned" });
       }
-
-      console.log(18);
       
 
       if (!driver) {
         return res.status(404).json({ error: "Driver not found" });
       }
-
-      console.log(25);
       
 
       if (!load) {
         return res.status(404).json({ error: "Load not found" });
       }
-
-      console.log(32);
       
 
       const assign = await Assignment.findOne({
@@ -40,12 +34,10 @@ class AssignmentController {
           }
         }
       });
-
-      console.log(44);
       
       
       if (assign) {
-        return res.status(404).json({ error: "Haydovchi safarni yakunlamasdan boshqa yuk ololmaydi!" });
+        return res.status(200).json({ error: "Haydovchi safarni yakunlamasdan boshqa yuk ololmaydi!" });
       }
 
       console.log(51);
