@@ -421,7 +421,7 @@ class LoadController {
 
     async getDriverLoads(req, res, next) {
         const { user_id } = req.query;
-
+        // in_transit
         try {
             // 1. Foydalanuvchi mavjudligini va role driver ekanligini tekshirish
             const user = await Users.findOne({
@@ -463,7 +463,7 @@ class LoadController {
             }
 
             // 4. Har bir load uchun LoadDetails va DriverStop ma'lumotlarini olish
-            const loadData = await Promise.allSettled(
+            const loadData = await Promise.all(
                 loads.map(async (load) => {
                     // LoadDetails dan car_type_id ni olish
                     const loadDetails = await LoadDetails.findOne({

@@ -667,6 +667,46 @@ class DriverControllers {
             return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
         }
     }
+
+    async finishTrip(req, res, next) {
+        const { user_id, load_id} = req.body;
+    
+        try {
+            // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
+            const [driver, load, assignment] = await Promise.all([
+                Driver.findOne({ where: { user_id } }),
+                Load.findByPk(load_id),
+                Assignment.findOne({ where: { load_id } })
+            ]);
+    
+            // Haydovchi topilmasa
+            if (!driver) {
+                return res.status(404).json({ message: 'Driver not found' , success: false });
+            }
+    
+            // Yuk topilmasa
+            if (!load) {
+                return res.status(404).json({ message: 'Load not found', success: false });
+            }
+    
+            // Tayinlangan vazifa topilmasa
+            if (!assignment) {
+                return res.status(404).json({ message: 'Assignment not found', success: false });
+            }
+    
+            // Holatlarni yangilash
+            await Promise.all([
+                assignment.update({ assignment_status: "delivered" }),
+                load.update({ load_status: "delivered" }),
+                driver.update({driver_status: "empty"})
+            ]);
+    
+            return res.status(200).json({ success: true, message: 'Safar nihoyasiga yetdi.' });
+        } catch (error) {
+            console.error("Error updating driver status:", error);
+            return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
+        }
+    }
     
 
 }
