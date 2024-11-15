@@ -433,8 +433,13 @@ class LoadController {
             }
 
             // 2. Ushbu driverga tegishli barcha Assignment larni olish
+            const driver = await Driver.findOne({where: {user_id: user_id}});
+
+            if (!driver) {
+                return next(ApiError.badRequest("Driver topilmadi yoki u driver emas"));
+            }
             const assignments = await Assignment.findAll({
-                where: { driver_id: user_id },
+                where: { driver_id: driver.id },
                 attributes: ['load_id'],
             });
 
