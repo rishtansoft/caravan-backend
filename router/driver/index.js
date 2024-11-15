@@ -38,7 +38,7 @@ router.post("/start-loading", protect, driverController.startLoading);
 router.get("/load-status", protect, driverController.getLoadStatus);
 
 // yuklashni tamomlash uchun api
-router.get("/finish-pickup-load", protect, driverController.finishLoadPickup);
+router.post("/finish-pickup-load", protect, driverController.finishLoadPickup);
 
 // yukni olishga ketayotgani haqida
 router.post("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
