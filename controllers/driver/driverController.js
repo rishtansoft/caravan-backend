@@ -476,8 +476,6 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-
-            console.log(480, assignment);
     
             // Haydovchi topilmasa
             if (!driver) {
@@ -669,7 +667,8 @@ class DriverControllers {
     }
 
     async finishTrip(req, res, next) {
-        const { user_id, load_id} = req.body;
+
+        const { user_id, load_id, current_longitude, current_latitude, start_longitude, start_latitude } = req.body;
     
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
@@ -694,6 +693,16 @@ class DriverControllers {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
     
+            // Masofani hisoblash va tekshirish
+            const distance = utilFunctions.calculateDistance(
+                { latitude: current_latitude, longitude: current_longitude },
+                { latitude: start_latitude, longitude: start_longitude }
+            );
+    
+            if (distance >= 150 || !distance) {
+                return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
+            }
+    
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "delivered" }),
@@ -701,11 +710,13 @@ class DriverControllers {
                 driver.update({driver_status: "empty"})
             ]);
     
-            return res.status(200).json({ success: true, message: 'Safar nihoyasiga yetdi.' });
+            return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
             return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
         }
+
+        
     }
     
 

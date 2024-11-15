@@ -44,6 +44,6 @@ router.post("/finish-pickup-load", protect, driverController.finishLoadPickup);
 router.post("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
 
 // yukni olishga ketayotgani haqida
-router.get("/finish-trip", protect, driverController.finishTrip);
+router.post("/finish-trip", protect, driverController.finishTrip);
 
 module.exports = router;
