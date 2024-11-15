@@ -25,6 +25,8 @@ class LoadController {
 
             const load = await Load.findByPk(load_id);
 
+            const driver = await Driver.findOne({where: {user_id: user_id}});
+
             let result = {};
             if (!load) {
                 return next(ApiError.badRequest("Load not found"));
@@ -49,6 +51,10 @@ class LoadController {
                     },
                 ],
             });
+
+            if (driver) {
+                result.driver_id = driver.id
+            }
 
             if (loadDetails) {
                 result.loadDetails = loadDetails
