@@ -1,7 +1,7 @@
 const express = require("express");
 const protect = require("../../middleware/authMiddleware");
 const driverController = require("../../controllers/driver/driverController");
-const upload = require('../../utils/upload'); 
+const upload = require('../../utils/upload');
 const router = express.Router();
 
 // get profile
@@ -41,7 +41,7 @@ router.get("/load-status", protect, driverController.getLoadStatus);
 router.get("/finish-pickup-load", protect, driverController.finishLoadPickup);
 
 // yukni olishga ketayotgani haqida
-router.get("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
+router.post("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
 
 // yukni olishga ketayotgani haqida
 router.get("/finish-trip", protect, driverController.finishTrip);
