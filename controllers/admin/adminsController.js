@@ -160,6 +160,52 @@ class AdminsController {
             next(ApiError.internal("Error fetching driver orders: " + error.message));
         }
     }
+
+    async updateDriver(req, res, next) {
+        try {
+            const { driverId } = req.params;
+            const {
+                car_type_id,
+                name,
+                tex_pas_ser,
+                prava_ser,
+                tex_pas_num,
+                prava_num,
+                car_img,
+                prava_img,
+                tex_pas_img,
+                driver_status,
+                is_approved,
+                blocked
+            } = req.body; 
+
+            const driver = await Driver.findByPk(driverId);
+            if (!driver) {
+                return next(ApiError.notFound('Haydovchi topilmadi'));
+            }
+
+            await driver.update({
+                car_type_id: car_type_id ?? driver.car_type_id,
+                name: name ?? driver.name,
+                tex_pas_ser: tex_pas_ser ?? driver.tex_pas_ser,
+                prava_ser: prava_ser ?? driver.prava_ser,
+                tex_pas_num: tex_pas_num ?? driver.tex_pas_num,
+                prava_num: prava_num ?? driver.prava_num,
+                car_img: car_img ?? driver.car_img,
+                prava_img: prava_img ?? driver.prava_img,
+                tex_pas_img: tex_pas_img ?? driver.tex_pas_img,
+                driver_status: driver_status ?? driver.driver_status,
+                is_approved: is_approved ?? driver.is_approved,
+                blocked: blocked ?? driver.blocked,
+            });
+
+            // Return updated driver details
+            res.json({ message: "Haydovchi ma'lumotlari muvaffaqiyatli yangilandi", id: driver.id , driver });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Haydovchi ma'lumotlarini yangilashda xatolik: " + error.message));
+        }
+    }
 }
 
 module.exports = new AdminsController();

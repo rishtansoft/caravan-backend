@@ -115,7 +115,7 @@ module.exports = (sequelize) => {
                 foreignKey: "user_id",
                 targetKey: "id",
             });
-            Driver.hasMany(models.Assignment, { foreignKey: "driver_id" });
+            Driver.hasMany(models.Assignment, { foreignKey: "driver_id", onDelete: 'CASCADE', });
             Driver.belongsTo(CarType, { foreignKey: 'car_type_id', as: 'carType' });
         }
     }
@@ -229,7 +229,7 @@ module.exports = (sequelize) => {
     // Load modeli
     class Load extends BaseModel {
         static associate(models) {
-            Load.belongsTo(models.Users, { foreignKey: "user_id" });
+            Load.belongsTo(models.Users, { foreignKey: "user_id" , onDelete: 'CASCADE',});
             Load.hasOne(models.Assignment, { foreignKey: "load_id" });
 
             Load.hasMany(models.Location, { foreignKey: 'load_id' });
@@ -348,8 +348,8 @@ module.exports = (sequelize) => {
     // Assignment modeli
     class Assignment extends BaseModel {
         static associate(models) {
-            Assignment.belongsTo(models.Driver, { foreignKey: 'driver_id' });
-            Assignment.belongsTo(models.Load, { foreignKey: 'load_id' });
+            Assignment.belongsTo(models.Driver, { foreignKey: 'driver_id', onDelete: 'CASCADE', });
+            Assignment.belongsTo(models.Load, { foreignKey: 'load_id', onDelete: 'CASCADE', });
             Assignment.hasMany(models.Location);
             Assignment.hasMany(models.DriverStop);
         }
@@ -605,6 +605,7 @@ module.exports = (sequelize) => {
     Driver.associate = (models) => {
         Driver.belongsTo(models.Users);
         Driver.hasMany(models.Assignment);
+        
     };
 
     Load.associate = (models) => {
