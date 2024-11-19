@@ -46,11 +46,7 @@ app.get('/', async (req, res) => {
 
 async function saveLocationToDB(driverId, latitude, longitude) {
     const assignment = await Assignment.findOne({
-        where: {
-            driver_id: driverId,
-            assignment_status: "assigned",
-        },
-        order: [['createdAt', 'DESC']],
+        where: {driver_id: driverId,}
     });
 
     if (!assignment) {
