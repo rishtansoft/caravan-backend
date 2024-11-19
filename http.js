@@ -64,6 +64,7 @@ async function saveLocationToDB(driverId, latitude, longitude) {
     
 
     await Location.create({
+        load_id: assignment.load_id,
         assignment_id: assignment.id,
         latitude,
         longitude,
