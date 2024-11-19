@@ -6,6 +6,7 @@ const errorHandler = require("./middleware/ErrorHandlingMiddlware");
 const http = require('http');
 const { Server } = require('socket.io')
 const { Users, Driver, Assignment, Location, Load } = require('./models');
+const { Op } = require("sequelize");
 
 const app = express();
 
@@ -46,13 +47,21 @@ app.get('/', async (req, res) => {
 
 async function saveLocationToDB(driverId, latitude, longitude) {
     const assignment = await Assignment.findOne({
-        where: {driver_id: driverId,}
+        where: {
+            driver_id: driverId,
+            assignment_status: {
+                [Op.in]: ["in_transit_get_load", "in_transit"]
+            }
+        }
     });
-
+    
     if (!assignment) {
         console.log(`Haydovchiga yuk topilmadi: ${driverId}`);
         return;
     }
+
+    console.log("Location create qilinmoqda");
+    
 
     await Location.create({
         assignment_id: assignment.id,
