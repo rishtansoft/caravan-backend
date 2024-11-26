@@ -520,7 +520,6 @@ class LoadController {
             return next(ApiError.badRequest("Noto'g'ri driver_status qiymati"));
         }
 
-
         try {
             // Foydalanuvchiga tegishli Driver yozuvini topish
             const driver = await Driver.findOne({ where: { user_id } });

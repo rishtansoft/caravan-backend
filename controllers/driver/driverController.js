@@ -468,7 +468,7 @@ class DriverControllers {
 
     async arrivedLuggage(req, res, next) {
         const { user_id, load_id, current_longitude, current_latitude, start_longitude, start_latitude } = req.body;
-    
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -476,38 +476,38 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
+
             // Masofani hisoblash va tekshirish
             const distance = utilFunctions.calculateDistance(
                 { latitude: current_latitude, longitude: current_longitude },
                 { latitude: start_latitude, longitude: start_longitude }
             );
-    
+
             if (distance >= 150 || !distance) {
                 return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
             }
-    
+
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "arrived_picked_up" }),
                 load.update({ load_status: "arrived_picked_up" })
             ]);
-    
+
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -516,8 +516,8 @@ class DriverControllers {
     }
 
     async arrivingToGetLoad(req, res, next) {
-        const { user_id, load_id} = req.body;
-    
+        const { user_id, load_id } = req.body;
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -525,28 +525,28 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
+
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "in_transit_get_load" }),
                 load.update({ load_status: "in_transit_get_load" })
             ]);
-    
+
             return res.status(200).json({ success: true, message: 'Haydovchi yukni olish uchun yolga chiqdi' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -555,8 +555,8 @@ class DriverControllers {
     }
 
     async startLoading(req, res, next) {
-        const { user_id, load_id} = req.body;
-    
+        const { user_id, load_id } = req.body;
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -564,28 +564,28 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
+
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "picked_up" }),
                 load.update({ load_status: "picked_up" })
             ]);
-    
+
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -594,8 +594,8 @@ class DriverControllers {
     }
 
     async getLoadStatus(req, res, next) {
-        const { user_id, load_id} = req.body;
-    
+        const { user_id, load_id } = req.body;
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -603,23 +603,23 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
-            return res.status(200).json({ success: true, status: load.load_status});
+
+            return res.status(200).json({ success: true, status: load.load_status });
 
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -628,8 +628,8 @@ class DriverControllers {
     }
 
     async finishLoadPickup(req, res, next) {
-        const { user_id, load_id} = req.body;
-    
+        const { user_id, load_id } = req.body;
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -637,28 +637,28 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
+
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "in_transit" }),
                 load.update({ load_status: "in_transit" })
             ]);
-    
+
             return res.status(200).json({ success: true, message: 'Yuklash nihoyasiga yetdi.' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -669,7 +669,7 @@ class DriverControllers {
     async finishTrip(req, res, next) {
 
         const { user_id, load_id, current_longitude, current_latitude, start_longitude, start_latitude } = req.body;
-    
+
         try {
             // Dastlab kerakli obyektlarni topish uchun barcha so'rovlarni parallel ravishda bajaramiz
             const [driver, load, assignment] = await Promise.all([
@@ -677,48 +677,105 @@ class DriverControllers {
                 Load.findByPk(load_id),
                 Assignment.findOne({ where: { load_id } })
             ]);
-    
+
             // Haydovchi topilmasa
             if (!driver) {
-                return res.status(404).json({ message: 'Driver not found' , success: false });
+                return res.status(404).json({ message: 'Driver not found', success: false });
             }
-    
+
             // Yuk topilmasa
             if (!load) {
                 return res.status(404).json({ message: 'Load not found', success: false });
             }
-    
+
             // Tayinlangan vazifa topilmasa
             if (!assignment) {
                 return res.status(404).json({ message: 'Assignment not found', success: false });
             }
-    
+
             // Masofani hisoblash va tekshirish
             const distance = utilFunctions.calculateDistance(
                 { latitude: current_latitude, longitude: current_longitude },
                 { latitude: start_latitude, longitude: start_longitude }
             );
-    
+
             if (distance >= 150 || !distance) {
                 return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
             }
-    
+
             // Holatlarni yangilash
             await Promise.all([
                 assignment.update({ assignment_status: "delivered" }),
                 load.update({ load_status: "delivered" }),
-                driver.update({driver_status: "empty"})
+                driver.update({ driver_status: "empty" })
             ]);
-    
+
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
             return next(ApiError.internal("Yukni olishga yetib kelishda muammo bor."));
         }
 
-        
+
     }
-    
+
+    async getDriverLocation(req, res, next) {
+        const { load_id, user_id } = req.query;
+
+        try {
+            // Validatsiya
+            if (!load_id || !user_id) {
+                return res.status(400).json({ message: "load_id va user_id talab qilinadi." });
+            }
+
+            // User va yuk o'rtasidagi aloqani tekshirish
+            const load = await Load.findOne({
+                where: { id: load_id, user_id },
+            });
+
+            if (!load) {
+                return res.status(403).json({
+                    message: "Bu yuk sizga tegishli emas yoki topilmadi.",
+                });
+            }
+
+            // Yukga tayinlangan haydovchini olish
+            const driver = await Driver.findOne({
+                where: {
+                    id: load_id, // Yukka tayinlangan haydovchini topish
+                },
+            });
+
+            if (!driver) {
+                return res.status(404).json({
+                    message: "Yuk uchun haydovchi topilmadi.",
+                });
+            }
+
+            // Haydovchining oxirgi 5 ta lokatsiyasini olish
+            const locations = await Location.findAll({
+                where: { load_id },
+                order: [["recordedAt", "DESC"]], // Eng oxirgi yozuvlarni olish
+                limit: 5, // Faqat 5 ta ma'lumotni qaytarish
+            });
+
+            if (locations.length === 0) {
+                return res.status(404).json({
+                    message: "Haydovchining lokatsiyalari topilmadi.",
+                });
+            }
+
+            // Natijani qaytarish
+            return res.status(200).json({
+                driver_id: driver.id,
+                locations,
+            });
+        } catch (error) {
+            console.error("Xatolik:", error);
+            return res.status(500).json({ message: "Server xatosi yuz berdi." });
+        }
+    }
+
 
 }
 

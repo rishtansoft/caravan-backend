@@ -46,4 +46,7 @@ router.post("/arring-to-get-load", protect, driverController.arrivingToGetLoad);
 // yukni olishga ketayotgani haqida
 router.post("/finish-trip", protect, driverController.finishTrip);
 
+// yukni olishga ketayotgani haqida
+router.get("/get-drvier-location", protect, driverController.getDriverLocation);
+
 module.exports = router;
