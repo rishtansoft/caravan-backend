@@ -739,24 +739,11 @@ class DriverControllers {
                 });
             }
 
-            // Yukga tayinlangan haydovchini olish
-            const driver = await Driver.findOne({
-                where: {
-                    id: load_id, // Yukka tayinlangan haydovchini topish
-                },
-            });
-
-            if (!driver) {
-                return res.status(404).json({
-                    message: "Yuk uchun haydovchi topilmadi.",
-                });
-            }
-
             // Haydovchining oxirgi 5 ta lokatsiyasini olish
             const locations = await Location.findAll({
                 where: { load_id },
                 order: [["recordedAt", "DESC"]], // Eng oxirgi yozuvlarni olish
-                limit: 5, // Faqat 5 ta ma'lumotni qaytarish
+                limit: 1, // Faqat 5 ta ma'lumotni qaytarish
             });
 
             if (locations.length === 0) {
