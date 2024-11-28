@@ -754,7 +754,6 @@ class DriverControllers {
 
             // Natijani qaytarish
             return res.status(200).json({
-                driver_id: driver.id,
                 locations,
             });
         } catch (error) {
