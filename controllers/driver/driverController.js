@@ -1,4 +1,4 @@
-const { Users, Driver, CarType, Assignment, Load, DriverStop } = require("../../models/index");
+const { Users, Driver, CarType, Assignment, Load, DriverStop, Location } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const utilFunctions = require('../../utils/index');
 
