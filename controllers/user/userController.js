@@ -864,6 +864,51 @@ class UserControllers {
     }
   }
 
+  async checkToken(req, res, next) {
+    try {
+      const { token } = req.body;
+  
+      if (!token) {
+        return next(ApiError.badRequest("Token is required"));
+      }
+  
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.SECRET_KEY); 
+      } catch (err) {
+        return res.json({
+          success: false,
+          message: "Invalid token",
+        });
+      }
+
+      console.log(881);
+  
+      const user = await Users.findOne({ where: { id: decoded.id } });
+  
+      if (!user) {
+        return res.json({
+          success: false,
+          message: "User not found",
+        });
+      }
+  
+      return res.json({
+        success: true,
+        message: "Token is valid",
+        user: {
+          id: user.id,
+          unique_id: user.unique_id,
+          phone: user.phone,
+          role: user.role,
+        }
+      });
+    } catch (error) {
+      console.error("Check token error: " + error.message);
+      return next(ApiError.internal("Check token error: " + error.message));
+    }
+  }
+
 }
 
 module.exports = new UserControllers();

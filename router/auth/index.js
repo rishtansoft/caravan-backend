@@ -49,5 +49,8 @@ router.post('/replace-avatar',protect, upload.single('file'), userController.rep
 // Owner ning shaxsiy ma'lumotlarini o'zgartirish
 router.post('/update-owner-profile',protect, userController.updateOwnerProfile);
 
+// token ning active yoki active bolmaganligini aniqlovchi API
+router.post('/check-token', userController.checkToken);
+
 
 module.exports = router;
