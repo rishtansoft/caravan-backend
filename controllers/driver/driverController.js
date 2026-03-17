@@ -5,6 +5,12 @@ const utilFunctions = require('../../utils/index');
 const configService = require('../../config/configureService');
 const { uploadFile, deleteFile } = require('../../utils/index');
 
+// Socket service ni olish uchun
+let socketService = null;
+const setSocketService = (service) => {
+    socketService = service;
+};
+
 
 class DriverControllers {
     async getProfile(req, res, next) {
@@ -508,6 +514,17 @@ class DriverControllers {
                 load.update({ load_status: "arrived_picked_up" })
             ]);
 
+            // Yuk egasiga xabar yuborish
+            if (socketService) {
+                const ownerId = load.user_id;
+                socketService.notifyOwner(ownerId, {
+                    type: 'driver_arrived_pickup',
+                    message: 'Haydovchi yukni olish manziliga yetib keldi',
+                    load_id: load_id,
+                    status: 'arrived_picked_up'
+                });
+            }
+
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -710,6 +727,17 @@ class DriverControllers {
                 driver.update({ driver_status: "empty" })
             ]);
 
+            // Yuk egasiga xabar yuborish
+            if (socketService) {
+                const ownerId = load.user_id;
+                socketService.notifyOwner(ownerId, {
+                    type: 'load_delivered',
+                    message: 'Yukingiz manzilga yetkazildi!',
+                    load_id: load_id,
+                    status: 'delivered'
+                });
+            }
+
             return res.status(200).json({ success: true, message: 'Siz manzilga yetib keldingiz' });
         } catch (error) {
             console.error("Error updating driver status:", error);
@@ -765,4 +793,7 @@ class DriverControllers {
 
 }
 
-module.exports = new DriverControllers();
+const driverController = new DriverControllers();
+
+module.exports = driverController;
+module.exports.setSocketService = setSocketService;

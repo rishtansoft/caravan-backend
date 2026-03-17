@@ -6,6 +6,10 @@ const { server, socketService, app } = require("./http");
 const sendmessage = require('./router/sendmessage/sendmessage')
 const router = require("./router/index");
 const errorHandler = require('./middleware/ErrorHandlingMiddlware');
+const { setSocketService } = require('./controllers/driver/driverController');
+
+// Socket service ni driver controller ga ulash
+setSocketService(socketService);
 
 app.use('/socket', sendmessage)
 

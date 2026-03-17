@@ -240,6 +240,20 @@ class SocketService {
         }
     }
 
+    // Yuk egasiga xabar yuborish
+    notifyOwner(ownerId, data) {
+        const ownerSocket = Array.from(this.onlineOwners).find(socket =>
+            socket.handshake.query.user_id === ownerId.toString()
+        );
+
+        if (ownerSocket) {
+            ownerSocket.emit('load_status_update', data);
+            console.log(`Yuk egasiga xabar yuborildi: ${ownerId}`, data);
+        } else {
+            console.log(`Yuk egasi hozirda onlayn emas: ${ownerId}`);
+        }
+    }
+
 
 }
 
