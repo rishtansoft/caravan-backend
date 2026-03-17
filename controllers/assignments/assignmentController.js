@@ -1,4 +1,4 @@
-const { Assignment, Driver, Load, Users } = require("../../models/index");
+const { Assignment, Driver, Load, Users, Location } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const { Op } = require('sequelize');
 
@@ -78,7 +78,11 @@ class AssignmentController {
     }
 
     try {
-      const driver = Driver.findOne({ where: { user_id } })
+      const driver = await Driver.findOne({ where: { user_id } });
+
+      if (!driver) {
+        return res.status(404).json({ error: 'Haydovchi topilmadi.' });
+      }
 
       const assignment = await Assignment.findOne({
         where: { driver_id: driver.id }
@@ -88,21 +92,19 @@ class AssignmentController {
         return res.status(404).json({ error: 'Aktiv topshiriq topilmadi.' });
       }
 
-      const locationData = await Promise.allSettled(locations.map(async (location, index) => {
-        const lastLocation = await Location.findOne({
-          where: { assignment_id: assignment.id },
-          order: [['order', 'DESC']]
-        });
+      const lastLocation = await Location.findOne({
+        where: { load_id: assignment.load_id },
+        order: [['order', 'DESC']]
+      });
 
-        const newOrder = lastLocation ? lastLocation.order + 1 + index : 1 + index;
+      const startOrder = lastLocation ? lastLocation.order + 1 : 1;
 
-        return {
-          assignment_id: assignment.id,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          recordedAt: location.recordedAt || new Date(),
-          order: newOrder
-        };
+      const locationData = locations.map((location, index) => ({
+        load_id: assignment.load_id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        recordedAt: location.recordedAt || new Date(),
+        order: startOrder + index
       }));
 
       await Location.bulkCreate(locationData);
@@ -127,19 +129,19 @@ class AssignmentController {
         return res.status(403).json({ error: 'Foydalanuvchi cargo_owner emas yoki topilmadi.' });
       }
 
-      const assignment = await Assignment.findOne({
+      const load = await Load.findOne({
         where: {
           id: load_id,
           user_id: user.id
         }
       });
 
-      if (!assignment) {
+      if (!load) {
         return res.status(404).json({ error: 'Bu yuk foydalanuvchiga tegishli emas yoki topilmadi.' });
       }
 
       const latestLocation = await Location.findOne({
-        where: { assignment_id: assignment.id },
+        where: { load_id: load.id },
         order: [['recordedAt', 'DESC']]
       });
 
@@ -177,7 +179,7 @@ class AssignmentController {
       }
 
       if (user.role == 'driver') {
-        const driver = Driver.findOne({ where: { user_id: user.id } })
+        const driver = await Driver.findOne({ where: { user_id: user.id } });
 
         if (driver && load.driver_id != driver.id) {
           return res.status(403).json({ error: 'Bu yuk sizga tegishli emas.' });

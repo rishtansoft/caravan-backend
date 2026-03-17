@@ -6,7 +6,7 @@ class ApiError extends Error {
   }
 
   static badRequest(message) {
-    return new ApiError(404, message);
+    return new ApiError(400, message);
   }
 
   static userNotFound(message) {
@@ -22,7 +22,7 @@ class ApiError extends Error {
   }
 
   static notFound(message) {
-    return new ApiError(message, 404);
+    return new ApiError(404, message);
   }
 }
 

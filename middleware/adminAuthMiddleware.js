@@ -1,14 +1,21 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = function (req, res, next) {
+const authMiddleware = function (req, res, next) {
     if (req.method === "OPTIONS") {
-        next();
+        return next();
     }
 
     try {
-        const token = req.headers.authorization.split(" ")[1];
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(403).json({
+                message: "No authorization header provided!",
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
         if (!token) {
-            res.status(403).json({
+            return res.status(403).json({
                 message: "unregistered user!",
             });
         }
@@ -16,22 +23,21 @@ module.exports = function (req, res, next) {
         req.user = decoded;
         next();
     } catch (error) {
-        res.status(403).json({
+        return res.status(403).json({
             message: "unregistered user!",
         });
     }
-
 };
-
 
 const adminMiddleware = function (req, res, next) {
     if (req.user && req.user.role === 'admin') {
         next();
     } else {
-        res.status(403).json({ message: 'Access denied' });
+        return res.status(403).json({ message: 'Access denied' });
     }
 };
 
 module.exports = {
+    authMiddleware,
     adminMiddleware,
 };

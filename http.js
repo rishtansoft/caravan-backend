@@ -65,7 +65,6 @@ async function saveLocationToDB(driverId, latitude, longitude) {
 
     await Location.create({
         load_id: assignment.load_id,
-        assignment_id: assignment.id,
         latitude,
         longitude,
         recordedAt: new Date(),
@@ -111,7 +110,7 @@ class SocketService {
             }
 
             if (role == 'cargo_owner') {
-                this.onlineDrivers.add(socket);
+                this.onlineOwners.add(socket);
             }
 
             this.onlineUsers.add(socket);
@@ -210,15 +209,15 @@ class SocketService {
 
     getOnlineOwners() {
         return {
-            drivers: Array.from(this.onlineDrivers),
-            count: this.onlineDrivers.size
+            owners: Array.from(this.onlineOwners),
+            count: this.onlineOwners.size
         };
     }
 
     getOnlineDrivers() {
         return {
-            owners: Array.from(this.onlineOwners),
-            count: this.onlineOwners.size
+            drivers: Array.from(this.onlineDrivers),
+            count: this.onlineDrivers.size
         };
     }
 

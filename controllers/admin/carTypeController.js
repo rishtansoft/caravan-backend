@@ -76,7 +76,7 @@ const updateCarType = async (req, res, next) => {
         }
 
         await carType.update({
-            title: title || carType.title,
+            name: title || carType.name,
             icon: icon || carType.icon,
             max_weight: max_weight || carType.max_weight,
             dim_x: dim_x || carType.dim_x,
