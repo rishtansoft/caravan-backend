@@ -11,5 +11,8 @@ router.put('/:driverId/update', authMiddleware, adminMiddleware, adminsControlle
 router.delete('/:driverId', authMiddleware, adminMiddleware, adminsController.deleteDriver);
 router.get('/:driverId/orders', authMiddleware, adminMiddleware, adminsController.getDriverOrders);
 router.post('/:driverId/block', authMiddleware, adminMiddleware, adminsController.blockDriver);
+router.post('/:driverId/unblock', authMiddleware, adminMiddleware, adminsController.unblockDriver);
+router.post('/:driverId/approve', authMiddleware, adminMiddleware, adminsController.approveDriver);
+router.post('/:driverId/reject', authMiddleware, adminMiddleware, adminsController.rejectDriver);
 
 module.exports = router;

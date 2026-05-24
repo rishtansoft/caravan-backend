@@ -30,14 +30,23 @@ const authMiddleware = function (req, res, next) {
 };
 
 const adminMiddleware = function (req, res, next) {
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && ['admin', 'superadmin'].includes(req.user.role)) {
         next();
     } else {
         return res.status(403).json({ message: 'Access denied' });
     }
 };
 
+const superadminMiddleware = function (req, res, next) {
+    if (req.user && req.user.role === 'superadmin') {
+        next();
+    } else {
+        return res.status(403).json({ message: 'Faqat superadmin uchun' });
+    }
+};
+
 module.exports = {
     authMiddleware,
     adminMiddleware,
+    superadminMiddleware,
 };

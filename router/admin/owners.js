@@ -11,5 +11,6 @@ router.put('/:ownerId/update', authMiddleware, adminMiddleware, adminOwnerContro
 router.delete('/:ownerId', authMiddleware, adminMiddleware, adminOwnerController.deleteOwner);
 router.get('/:ownerId/orders', authMiddleware, adminMiddleware, adminOwnerController.getOwnerOrders);
 router.post('/:ownerId/block', authMiddleware, adminMiddleware, adminOwnerController.blockOwner);
+router.post('/:ownerId/unblock', authMiddleware, adminMiddleware, adminOwnerController.unblockOwner);
 
 module.exports = router;

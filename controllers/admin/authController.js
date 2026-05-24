@@ -80,17 +80,20 @@ class AdminController {
             // Validate password
             await this.validatePassword(password, admin.password);
 
-            // Create JWT token
+            // Create JWT token (24h for admin UX)
             const token = jwt.sign(
-                { id: admin.id, phone: admin.phone, role: admin.role }, 
-                process.env.SECRET_KEY, 
-                { expiresIn: '1h' }
+                { id: admin.id, phone: admin.phone, role: admin.role },
+                process.env.SECRET_KEY,
+                { expiresIn: '24h' }
             );
 
-            return res.json({ 
-                message: "Muvaffaqiyatli kirish", 
-                id: admin.id, 
-                token 
+            return res.json({
+                message: "Muvaffaqiyatli kirish",
+                id: admin.id,
+                role: admin.role,
+                firstname: admin.firstname,
+                lastname: admin.lastname,
+                token
             });
 
         } catch (error) {

@@ -599,23 +599,10 @@ module.exports = (sequelize) => {
     );
 
 
-    Users.associate = (models) => {
-        Users.hasOne(models.Driver);
-        Users.hasMany(models.Load);
-        Users.hasMany(models.Notification);
-        Users.hasMany(models.UserRegister, { foreignKey: "user_id" });
-    };
-
-    Driver.associate = (models) => {
-        Driver.belongsTo(models.Users);
-        Driver.hasMany(models.Assignment);
-        
-    };
-
-    Load.associate = (models) => {
-        Load.belongsTo(models.Users);
-        Load.hasOne(models.Assignment);
-    };
+    // NOTE: do NOT reassign .associate here — the static associate() methods
+    // defined inside each model class above contain the full association set
+    // (including aliases like 'carType' and 'loadDetails'). Reassigning would
+    // overwrite them and break includes.
 
     return {
         Users,

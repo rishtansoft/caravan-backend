@@ -7,9 +7,9 @@ class AdminOwnerController {
 
      async getOwners(req, res, next) {
         try {
-            const { search, status, limit = 10, offset = 0 } = req.query;
+            const { search, status, page = 1, limit = 20 } = req.query;
 
-            const where = {};
+            const where = { role: 'cargo_owner' };
             if (search) {
                 where[Op.or] = [
                     { firstname: { [Op.iLike]: `%${search}%` } },
@@ -21,14 +21,23 @@ class AdminOwnerController {
                 where.user_status = status;
             }
 
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
             const owners = await Users.findAndCountAll({
                 where,
                 limit: parseInt(limit),
-                offset: parseInt(offset),
-                attributes: { exclude: ['password'] },
+                offset,
+                order: [['createdAt', 'DESC']],
+                attributes: { exclude: ['password', 'verification_code', 'verification_expiry'] },
             });
 
-            res.json({ message: 'Yuk egalari roʻyxati', data: owners });
+            res.json({
+                data: owners.rows,
+                total: owners.count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(owners.count / parseInt(limit)),
+            });
         } catch (error) {
             console.error(error);
             next(ApiError.internal("Yuk egalari ro'yxatini olishda xatolik: " + error.message));
@@ -86,6 +95,23 @@ class AdminOwnerController {
         } catch (error) {
             console.error(error);
             next(ApiError.internal("Yuk egasini bloklashda xatolik: " + error.message));
+        }
+    }
+
+    async unblockOwner(req, res, next) {
+        try {
+            const { ownerId } = req.params;
+
+            const owner = await Users.findByPk(ownerId);
+            if (!owner) return next(ApiError.notFound('Yuk egasi topilmadi'));
+
+            owner.user_status = 'active';
+            await owner.save();
+
+            res.json({ message: "Yuk egasi bloktan chiqarildi", id: owner.id });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Bloktan chiqarishda xatolik: " + error.message));
         }
     }
 
