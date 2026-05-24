@@ -7,6 +7,8 @@ const {
 
 const adminsController = require("../../controllers/admin/adminsController");
 const adminLoadController = require("../../controllers/admin/adminLoadController");
+const adminUploadController = require("../../controllers/admin/adminUploadController");
+const upload = require("../../utils/upload");
 const { authMiddleware, adminMiddleware, superadminMiddleware } = require("../../middleware/adminAuthMiddleware");
 
 const {
@@ -37,6 +39,10 @@ router.delete('/admins/:adminId', authMiddleware, superadminMiddleware, adminsCo
 
 // Stats / Dashboard
 router.get('/stats', authMiddleware, adminMiddleware, adminsController.getStats);
+
+// File upload (S3)
+router.post('/upload', authMiddleware, adminMiddleware, upload.single('file'), adminUploadController.upload);
+router.delete('/upload', authMiddleware, adminMiddleware, adminUploadController.deleteFile);
 
 // Loads
 router.get('/loads', authMiddleware, adminMiddleware, adminLoadController.getAllLoads);
