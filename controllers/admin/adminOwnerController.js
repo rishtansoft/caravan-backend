@@ -46,6 +46,40 @@ class AdminOwnerController {
 
 
 
+    async createOwner(req, res, next) {
+        try {
+            const { firstname, lastname, phone, phone_2, email, address, birthday, user_img, password } = req.body;
+
+            if (!firstname || !lastname || !phone || !password) {
+                return next(ApiError.badRequest("Ism, familiya, telefon va parol kerak"));
+            }
+            if (!/^\+998\d{9}$/.test(phone)) {
+                return next(ApiError.badRequest("Telefon raqami noto'g'ri formatda"));
+            }
+
+            const existing = await Users.findOne({ where: { phone } });
+            if (existing) return next(ApiError.badRequest("Bu telefon raqami band"));
+
+            const hashed = await bcrypt.hash(password, 10);
+            const user = await Users.create({
+                firstname, lastname, phone,
+                phone_2: phone_2 || null,
+                email: email || null,
+                address: address || null,
+                birthday: birthday || null,
+                user_img: user_img || null,
+                role: 'cargo_owner',
+                user_status: 'active',
+                password: hashed,
+            });
+
+            res.status(201).json({ message: "Yuk egasi qo'shildi", id: user.id, data: { ...user.toJSON(), password: undefined } });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Yuk egasi qo'shishda xatolik: " + error.message));
+        }
+    }
+
     async getOwnerById(req, res, next) {
         try {
             const { ownerId } = req.params;
@@ -65,13 +99,23 @@ class AdminOwnerController {
     async updateOwner(req, res, next) {
         try {
             const { ownerId } = req.params;
-            const { firstname, lastname, phone, phone_2, address, email, password } = req.body;
+            const { firstname, lastname, phone, phone_2, address, email, birthday, user_img, password } = req.body;
 
             const owner = await Users.findByPk(ownerId);
             if (!owner) return next(ApiError.notFound('Yuk egasi topilmadi'));
 
             const hashedPassword = password ? await bcrypt.hash(password, 10) : owner.password;
-            await owner.update({ firstname, lastname, phone, phone_2, address, email, password: hashedPassword });
+            await owner.update({
+                firstname: firstname ?? owner.firstname,
+                lastname: lastname ?? owner.lastname,
+                phone: phone ?? owner.phone,
+                phone_2: phone_2 !== undefined ? (phone_2 || null) : owner.phone_2,
+                address: address ?? owner.address,
+                email: email ?? owner.email,
+                birthday: birthday ?? owner.birthday,
+                user_img: user_img ?? owner.user_img,
+                password: hashedPassword,
+            });
 
             res.json({ message: "Yuk egasi ma'lumotlari yangilandi", id: owner.id });
         } catch (error) {

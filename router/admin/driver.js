@@ -6,6 +6,7 @@ const { authMiddleware, adminMiddleware } = require("../../middleware/adminAuthM
 const router = express.Router();
 
 router.get('/', authMiddleware, adminMiddleware, adminsController.getAllDrivers);
+router.post('/', authMiddleware, adminMiddleware, adminsController.createDriver);
 router.get('/:driverId', authMiddleware, adminMiddleware, adminsController.getDriverById);
 router.put('/:driverId/update', authMiddleware, adminMiddleware, adminsController.updateDriver);
 router.delete('/:driverId', authMiddleware, adminMiddleware, adminsController.deleteDriver);

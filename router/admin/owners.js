@@ -6,6 +6,7 @@ const { authMiddleware, adminMiddleware } = require("../../middleware/adminAuthM
 const router = express.Router();
 
 router.get('/', authMiddleware, adminMiddleware, adminOwnerController.getOwners);
+router.post('/', authMiddleware, adminMiddleware, adminOwnerController.createOwner);
 router.get('/:ownerId', authMiddleware, adminMiddleware, adminOwnerController.getOwnerById);
 router.put('/:ownerId/update', authMiddleware, adminMiddleware, adminOwnerController.updateOwner);
 router.delete('/:ownerId', authMiddleware, adminMiddleware, adminOwnerController.deleteOwner);

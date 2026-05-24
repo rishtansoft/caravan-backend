@@ -187,6 +187,60 @@ class AdminsController {
         }
     }
 
+    async createDriver(req, res, next) {
+        try {
+            const {
+                firstname, lastname, phone, phone_2, email, address, birthday, user_img,
+                car_type_id, name, tex_pas_ser, tex_pas_num, prava_ser, prava_num,
+                car_img, prava_img, tex_pas_img, password,
+            } = req.body;
+
+            if (!firstname || !lastname || !phone || !password) {
+                return next(ApiError.badRequest("Ism, familiya, telefon va parol kerak"));
+            }
+            if (!/^\+998\d{9}$/.test(phone)) {
+                return next(ApiError.badRequest("Telefon raqami noto'g'ri formatda"));
+            }
+
+            const existing = await Users.findOne({ where: { phone } });
+            if (existing) return next(ApiError.badRequest("Bu telefon raqami band"));
+
+            const hashed = await bcrypt.hash(password, 10);
+            const user = await Users.create({
+                firstname, lastname, phone,
+                phone_2: phone_2 || null,
+                email: email || null,
+                address: address || null,
+                birthday: birthday || null,
+                user_img: user_img || null,
+                role: 'driver',
+                user_status: 'active',
+                password: hashed,
+            });
+
+            const driver = await Driver.create({
+                user_id: user.id,
+                car_type_id: car_type_id || null,
+                name: name || null,
+                tex_pas_ser: tex_pas_ser || null,
+                tex_pas_num: tex_pas_num || null,
+                prava_ser: prava_ser || null,
+                prava_num: prava_num || null,
+                car_img: car_img || null,
+                prava_img: prava_img || null,
+                tex_pas_img: tex_pas_img || null,
+                driver_status: 'offline',
+                is_approved: false,
+                blocked: false,
+            });
+
+            return res.status(201).json({ message: "Haydovchi qo'shildi", id: driver.id, driver, user });
+        } catch (error) {
+            console.error(error);
+            next(ApiError.internal("Haydovchi qo'shishda xatolik: " + error.message));
+        }
+    }
+
     async deleteDriver(req, res, next) {
         try {
             const { driverId } = req.params;
@@ -275,8 +329,11 @@ class AdminsController {
         try {
             const { driverId } = req.params;
             const {
+                // Driver fields
                 car_type_id, name, tex_pas_ser, prava_ser, tex_pas_num, prava_num,
-                car_img, prava_img, tex_pas_img, driver_status, is_approved, blocked
+                car_img, prava_img, tex_pas_img, driver_status, is_approved, blocked,
+                // User fields (bog'liq Users yozuvini ham yangilash)
+                firstname, lastname, phone, phone_2, email, address, birthday, user_img,
             } = req.body;
 
             const driver = await Driver.findByPk(driverId);
@@ -296,6 +353,23 @@ class AdminsController {
                 is_approved: is_approved ?? driver.is_approved,
                 blocked: blocked ?? driver.blocked,
             });
+
+            // Update user record too (if user fields provided)
+            if (firstname || lastname || phone || email || address || birthday || user_img || phone_2 !== undefined) {
+                const user = await Users.findByPk(driver.user_id);
+                if (user) {
+                    await user.update({
+                        firstname: firstname ?? user.firstname,
+                        lastname: lastname ?? user.lastname,
+                        phone: phone ?? user.phone,
+                        phone_2: phone_2 !== undefined ? (phone_2 || null) : user.phone_2,
+                        email: email ?? user.email,
+                        address: address ?? user.address,
+                        birthday: birthday ?? user.birthday,
+                        user_img: user_img ?? user.user_img,
+                    });
+                }
+            }
 
             return res.json({ message: "Haydovchi yangilandi", id: driver.id, driver });
         } catch (error) {

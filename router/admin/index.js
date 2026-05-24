@@ -40,7 +40,10 @@ router.get('/stats', authMiddleware, adminMiddleware, adminsController.getStats)
 
 // Loads
 router.get('/loads', authMiddleware, adminMiddleware, adminLoadController.getAllLoads);
+router.post('/loads', authMiddleware, adminMiddleware, adminLoadController.createLoad);
 router.get('/loads/:id', authMiddleware, adminMiddleware, adminLoadController.getLoadById);
+router.put('/loads/:id', authMiddleware, adminMiddleware, adminLoadController.updateLoad);
+router.delete('/loads/:id', authMiddleware, adminMiddleware, adminLoadController.deleteLoad);
 router.get('/loads/:id/locations', authMiddleware, adminMiddleware, adminLoadController.getLoadLocations);
 router.post('/loads/:id/deactivate', authMiddleware, adminMiddleware, adminLoadController.deactivateLoad);
 
