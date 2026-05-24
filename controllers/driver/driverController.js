@@ -747,6 +747,85 @@ class DriverControllers {
 
     }
 
+    async batchLocations(req, res, next) {
+        try {
+            const { points } = req.body;
+            if (!Array.isArray(points) || points.length === 0) {
+                return next(ApiError.badRequest("points massivi bo'sh"));
+            }
+            if (points.length > 5000) {
+                return next(ApiError.badRequest("Bir martada 5000 nuqtadan ko'p yuborib bo'lmaydi"));
+            }
+
+            const userId = req.user?.id;
+            if (!userId) return next(ApiError.unauthorized("Auth talab qilinadi"));
+
+            const driver = await Driver.findOne({ where: { user_id: userId } });
+            if (!driver) return next(ApiError.badRequest("Haydovchi topilmadi"));
+
+            const assignment = await Assignment.findOne({
+                where: {
+                    driver_id: driver.id,
+                    assignment_status: ["in_transit_get_load", "arrived_picked_up", "picked_up", "in_transit"],
+                },
+            });
+            if (!assignment) {
+                return res.json({ accepted: 0, reason: "active_assignment_not_found" });
+            }
+
+            const rows = [];
+            for (const p of points) {
+                const lat = Number(p.latitude);
+                const lon = Number(p.longitude);
+                if (!isFinite(lat) || !isFinite(lon)) continue;
+                if (Math.abs(lat) > 90 || Math.abs(lon) > 180) continue;
+                const recordedAt = p.timestamp
+                    ? new Date(typeof p.timestamp === 'number' ? p.timestamp : Date.parse(p.timestamp))
+                    : new Date();
+                if (isNaN(recordedAt.getTime())) continue;
+                rows.push({
+                    load_id: assignment.load_id,
+                    latitude: lat,
+                    longitude: lon,
+                    recordedAt,
+                });
+            }
+
+            if (rows.length === 0) {
+                return res.json({ accepted: 0, reason: "no_valid_points" });
+            }
+
+            await Location.bulkCreate(rows);
+
+            // Owner'ga eng oxirgi nuqtani jonli yuborish
+            try {
+                if (socketService) {
+                    const load = await Load.findByPk(assignment.load_id);
+                    if (load) {
+                        const last = rows[rows.length - 1];
+                        socketService.notifyOwnerLocation(load.user_id, {
+                            loadId: load.id,
+                            assignmentId: assignment.id,
+                            driverId: userId,
+                            latitude: last.latitude,
+                            longitude: last.longitude,
+                            status: assignment.assignment_status,
+                            timestamp: last.recordedAt.toISOString(),
+                            source: 'batch',
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('notifyOwnerLocation (batch) xatolik:', e);
+            }
+
+            return res.json({ accepted: rows.length });
+        } catch (error) {
+            console.error("batchLocations xatolik:", error);
+            return next(ApiError.internal("Server xatosi"));
+        }
+    }
+
     async getDriverLocation(req, res, next) {
         const { load_id, user_id } = req.query;
 

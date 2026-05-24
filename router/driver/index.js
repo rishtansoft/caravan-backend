@@ -49,4 +49,7 @@ router.post("/finish-trip", protect, driverController.finishTrip);
 // Driver location ni olish
 router.get("/get-drvier-location", protect, driverController.getDriverLocation);
 
+// Offline buffer flush — bir nechta GPS nuqtani birga yuborish
+router.post("/location/batch", protect, driverController.batchLocations);
+
 module.exports = router;

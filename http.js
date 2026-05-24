@@ -124,19 +124,15 @@ class SocketService {
             console.log('👥 Current users:', Array.from(this.onlineUsers));
 
             socket.on('locationUpdate', async ({ latitude, longitude, driverId }) => {
-                console.log(`📍 Yangi joylashuv qabul qilindi: ${driverId}, ${latitude}, ${longitude}`);
-
                 try {
                     const assignment = await saveLocationAndGetAssignment(driverId, latitude, longitude);
                     if (!assignment) return;
 
                     const load = await Load.findByPk(assignment.load_id);
-                    if (!load) {
-                        console.log("Yuk ma'lumotlari topilmadi.");
-                        return;
-                    }
+                    if (!load) return;
 
                     const ownerId = load.user_id;
+                    const timestamp = new Date().toISOString();
 
                     const cargoOwnerSocket = Array.from(this.onlineOwners).find(s =>
                         s.handshake.query.user_id === ownerId.toString()
@@ -145,28 +141,27 @@ class SocketService {
                     if (cargoOwnerSocket) {
                         cargoOwnerSocket.emit('driverLocationUpdated', {
                             loadId: load.id,
+                            assignmentId: assignment.id,
                             driverId,
                             latitude,
                             longitude,
+                            status: assignment.assignment_status,
+                            timestamp,
                         });
-                    } else {
-                        console.log("Yuk egasi hozirda onlayn emas.");
                     }
                 } catch (error) {
                     console.error("locationUpdate xatolik:", error);
                 }
             });
 
-            // User disconnect bo'lganda
             socket.on('disconnect', () => {
-                console.log('🔴 User disconnected:', socket.id);
-                this.onlineUsers.delete(socket.id);
+                this.onlineUsers.delete(socket);
                 if (role === 'driver') {
-                    this.onlineDrivers.delete(socket.id);
+                    this.onlineDrivers.delete(socket);
                 } else if (role === 'cargo_owner') {
-                    this.onlineOwners.delete(socket.id);
+                    this.onlineOwners.delete(socket);
                 }
-                console.log(`📊 Remaining online users: ${this.onlineUsers.size}`);
+                console.log(`🔴 ${role} disconnected · online: ${this.onlineUsers.size}`);
             });
 
             // Test message
@@ -251,6 +246,16 @@ class SocketService {
             console.log(`Yuk egasiga xabar yuborildi: ${ownerId}`, data);
         } else {
             console.log(`Yuk egasi hozirda onlayn emas: ${ownerId}`);
+        }
+    }
+
+    // Yuk egasiga jonli driver location yuborish (batch endpoint chaqirgan)
+    notifyOwnerLocation(ownerId, payload) {
+        const ownerSocket = Array.from(this.onlineOwners).find(socket =>
+            socket.handshake.query.user_id === ownerId.toString()
+        );
+        if (ownerSocket) {
+            ownerSocket.emit('driverLocationUpdated', payload);
         }
     }
 
