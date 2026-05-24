@@ -1,4 +1,4 @@
-const { Users, Driver, UserRegister } = require("../../models/index");
+const { Users, Driver, UserRegister, Assignment, Load } = require("../../models/index");
 const ApiError = require("../../error/ApiError");
 const validateFun = require("./validateFun");
 const { Op } = require("sequelize");
@@ -176,10 +176,10 @@ class UserControllers {
             expiration: expirationTime,
           });
 
+          console.log(`[DEV] SMS code for user ${user.id} (${user.phone}): ${smsCode}`);
           return res.json({
             message: "Your previous SMS code has expired. A new SMS code has been sent. Please verify your phone number.",
             user_id: user.id,
-            smsCode: smsCode // SMS kodni API javobida yubormaslik tavsiya qilinadi, lekin bu testlash uchun kiritilgan
           });
         } else {
           // Agar SMS kod hali amal qilsa, tasdiqlashni talab qiluvchi xabar qaytarish
@@ -243,11 +243,10 @@ class UserControllers {
         expiration: expirationTime,
       });
 
+      console.log(`[DEV] SMS code for user ${user.id} (${user.phone}): ${smsCode}`);
       return res.json({
         message: "Registration complete. Please verify your phone number.",
         user_id: user.id,
-        smsCode: smsCode // SMS kodni API javobida yubormaslik tavsiya qilinadi, lekin bu testlash uchun kiritilgan
-
       });
     } catch (error) {
       console.error(error);
@@ -271,7 +270,7 @@ class UserControllers {
       const userRegister = await UserRegister.findOne({
         where: {
           user_id,
-          code,
+          code: String(code),
           status: 'active',
           expiration: {
             [Op.gt]: new Date(),
@@ -290,22 +289,15 @@ class UserControllers {
       await userRegister.update({ status: "inactive" });
 
       if (user.role === "driver") {
-
-        await Driver.create({
-          user_id: user.id,
-          car_type: "unknown",
-          name: `unknown`,
-          tex_pas_ser: "unknown",
-          prava_ser: "unknown",
-          tex_pas_num: "unknown",
-          prava_num: "unknown",
-          car_img: "",
-          prava_img: "",
-          tex_pas_img: "",
-          driver_status: "offline",
-          is_approved: false,
-          blocked: false,
-        });
+        const existingDriver = await Driver.findOne({ where: { user_id: user.id } });
+        if (!existingDriver) {
+          await Driver.create({
+            user_id: user.id,
+            driver_status: "offline",
+            is_approved: false,
+            blocked: false,
+          });
+        }
       }
 
       return res.json({
@@ -344,7 +336,9 @@ class UserControllers {
         return next(ApiError.badRequest("Invalid password"));
       }
 
-      // Foydalanuvchi uchun JWT token yaratish
+      if (user.user_status !== "active") {
+        return next(ApiError.badRequest("Telefon raqamingiz tasdiqlanmagan. Iltimos, ro'yxatdan o'tishni yakunlang."));
+      }
 
       const token = jwt.sign(
         { id: user.id, unique_id: user.unique_id, phone: user.phone, role: user.role },
@@ -464,9 +458,9 @@ class UserControllers {
         expiration: expirationTime,
       });
 
+      console.log(`[DEV] Resent SMS code for user ${user.id} (${user.phone}): ${newCode}`);
       return res.json({
         message: "Verification code resent successfully. Please check your phone.",
-        code: newCode
       });
     } catch (error) {
       console.error("Resend verification error: ", error);
@@ -497,11 +491,10 @@ class UserControllers {
         status: 'active',
       });
 
-      console.log(`Password reset code sent to ${phone}: ${resetCode}`);
+      console.log(`[DEV] Password reset code sent to ${phone}: ${resetCode}`);
 
       return res.json({
         message: "Password reset code has been sent to your phone number",
-        code: resetCode
       });
 
     } catch (error) {
@@ -615,11 +608,10 @@ class UserControllers {
         status: 'active',
       });
 
-      console.log(`New password reset code sent to ${phone}: ${resetCode}`);
+      console.log(`[DEV] New password reset code sent to ${phone}: ${resetCode}`);
 
       return res.json({
         message: "New password reset code has been sent to your phone number",
-        code: resetCode
       });
 
     } catch (error) {
@@ -658,8 +650,9 @@ class UserControllers {
       });
 
       // await smsService.send(new_phone, `Your verification code is: ${verificationCode}`);
+      console.log(`[DEV] Phone-change SMS for user ${user.id} → ${new_phone}: ${verificationCode}`);
 
-      return res.json({ message: 'Verification code sent to new phone number', code: verificationCode });
+      return res.json({ message: 'Verification code sent to new phone number' });
     } catch (error) {
       console.error(error);
       next(error);
@@ -733,12 +726,10 @@ class UserControllers {
         status: 'active',
       });
 
-      // Yangi kodni telefon raqamga yuborish (yoki console.log orqali chiqarish)
-      console.log(`New verification code sent to ${new_phone}: ${newCode}`);
+      console.log(`[DEV] New phone-change SMS for user ${user_id} → ${new_phone}: ${newCode}`);
 
       return res.json({
         message: 'New verification code has been sent to your phone number.',
-        code: newCode, // Productionda kodni response'ga qaytarish maqsadga muvofiq emas. Bu faqat debugging uchun.
       });
 
     } catch (error) {
@@ -906,6 +897,61 @@ class UserControllers {
     } catch (error) {
       console.error("Check token error: " + error.message);
       return next(ApiError.internal("Check token error: " + error.message));
+    }
+  }
+
+  async deleteAccount(req, res, next) {
+    try {
+      const userId = req.user && req.user.id;
+      if (!userId) {
+        return next(ApiError.badRequest("Foydalanuvchi aniqlanmadi"));
+      }
+
+      const user = await Users.findByPk(userId);
+      if (!user) {
+        return next(ApiError.badRequest("Foydalanuvchi topilmadi"));
+      }
+
+      if (user.role === "driver") {
+        const driver = await Driver.findOne({ where: { user_id: user.id } });
+        if (driver) {
+          const activeAssignment = await Assignment.findOne({
+            where: {
+              driver_id: driver.id,
+              assignment_status: {
+                [Op.in]: ["assigned", "in_transit_get_load", "arrived_picked_up", "picked_up", "in_transit"],
+              },
+            },
+          });
+          if (activeAssignment) {
+            return next(ApiError.badRequest("Aktiv yukingiz bor. Avval yukni yetkazib bering yoki bekor qiling."));
+          }
+        }
+      }
+
+      if (user.role === "cargo_owner") {
+        const activeLoad = await Load.findOne({
+          where: {
+            user_id: user.id,
+            load_status: {
+              [Op.in]: ["posted", "assigned", "in_transit_get_load", "arrived_picked_up", "picked_up", "in_transit"],
+            },
+          },
+        });
+        if (activeLoad) {
+          return next(ApiError.badRequest("Sizda aktiv yuk mavjud. Avval uni yopish kerak."));
+        }
+      }
+
+      await user.destroy();
+
+      return res.json({
+        success: true,
+        message: "Akkaunt muvaffaqiyatli o'chirildi",
+      });
+    } catch (error) {
+      console.error("deleteAccount error: " + error.message);
+      return next(ApiError.internal("Akkauntni o'chirishda xatolik: " + error.message));
     }
   }
 

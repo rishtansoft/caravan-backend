@@ -45,23 +45,26 @@ app.get('/', async (req, res) => {
     res.json('hello');
 });
 
-async function saveLocationToDB(driverId, latitude, longitude) {
+async function saveLocationAndGetAssignment(userId, latitude, longitude) {
+    const driver = await Driver.findOne({ where: { user_id: userId } });
+    if (!driver) {
+        console.log(`Driver topilmadi: user_id=${userId}`);
+        return null;
+    }
+
     const assignment = await Assignment.findOne({
         where: {
-            driver_id: driverId,
+            driver_id: driver.id,
             assignment_status: {
-                [Op.in]: ["in_transit_get_load", "in_transit"]
+                [Op.in]: ["in_transit_get_load", "arrived_picked_up", "picked_up", "in_transit"]
             }
         }
     });
-    
-    if (!assignment) {
-        console.log(`Haydovchiga yuk topilmadi: ${driverId}`);
-        return;
-    }
 
-    console.log("Location create qilinmoqda");
-    
+    if (!assignment) {
+        console.log(`Aktiv assignment topilmadi: driver_id=${driver.id}`);
+        return null;
+    }
 
     await Location.create({
         load_id: assignment.load_id,
@@ -69,6 +72,8 @@ async function saveLocationToDB(driverId, latitude, longitude) {
         longitude,
         recordedAt: new Date(),
     });
+
+    return assignment;
 }
 
 
@@ -122,38 +127,33 @@ class SocketService {
                 console.log(`📍 Yangi joylashuv qabul qilindi: ${driverId}, ${latitude}, ${longitude}`);
 
                 try {
-                    await saveLocationToDB(driverId, latitude, longitude);
-                    console.log("Joylashuv muvaffaqiyatli saqlandi.");
+                    const assignment = await saveLocationAndGetAssignment(driverId, latitude, longitude);
+                    if (!assignment) return;
+
+                    const load = await Load.findByPk(assignment.load_id);
+                    if (!load) {
+                        console.log("Yuk ma'lumotlari topilmadi.");
+                        return;
+                    }
+
+                    const ownerId = load.user_id;
+
+                    const cargoOwnerSocket = Array.from(this.onlineOwners).find(s =>
+                        s.handshake.query.user_id === ownerId.toString()
+                    );
+
+                    if (cargoOwnerSocket) {
+                        cargoOwnerSocket.emit('driverLocationUpdated', {
+                            loadId: load.id,
+                            driverId,
+                            latitude,
+                            longitude,
+                        });
+                    } else {
+                        console.log("Yuk egasi hozirda onlayn emas.");
+                    }
                 } catch (error) {
-                    console.error("Joylashuvni saqlashda xatolik yuz berdi:", error);
-                }
-
-                const assignment = await Assignment.findOne({ where: { driver_id: driverId } });
-                if (!assignment) {
-                    console.log("Ushbu haydovchi uchun yuk topilmadi.");
-                    return;
-                }
-
-                const load = await Load.findByPk(assignment.load_id);
-                if (!load) {
-                    console.log("Yuk ma'lumotlari topilmadi.");
-                    return;
-                }
-
-                const ownerId = load.owner_id;
-
-                const cargoOwnerSocket = Array.from(this.onlineOwners).find(socket =>
-                    socket.handshake.query.user_id === ownerId.toString()
-                );
-
-                if (cargoOwnerSocket) {
-                    cargoOwnerSocket.emit('driverLocationUpdated', {
-                        driverId,
-                        latitude,
-                        longitude,
-                    });
-                } else {
-                    console.log("Yuk egasi hozirda onlayn emas.");
+                    console.error("locationUpdate xatolik:", error);
                 }
             });
 

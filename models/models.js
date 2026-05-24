@@ -132,7 +132,7 @@ module.exports = (sequelize) => {
             },
             name: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             user_id: {
                 type: DataTypes.UUID,
@@ -145,19 +145,19 @@ module.exports = (sequelize) => {
 
             tex_pas_ser: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             prava_ser: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             tex_pas_num: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             prava_num: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             car_img: DataTypes.STRING,
             prava_img: DataTypes.STRING,
@@ -341,7 +341,7 @@ module.exports = (sequelize) => {
                 key: "id",
             },
         },
-        loading_time: DataTypes.FLOAT,
+        loading_time: DataTypes.DATE,
     }, {
         sequelize,
         tableName: "LoadDetails",

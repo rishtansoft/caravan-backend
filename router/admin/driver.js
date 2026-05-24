@@ -1,24 +1,15 @@
 const express = require("express");
 
 const adminsController = require("../../controllers/admin/adminsController");
-const { adminMiddleware } = require("../../middleware/adminAuthMiddleware");
+const { authMiddleware, adminMiddleware } = require("../../middleware/adminAuthMiddleware");
 
 const router = express.Router();
 
-// Drivers staff things
-router.get('/', adminMiddleware ,adminsController.getAllDrivers);
-// router.get('/', adminsController.getDrivers);
-// Get a specific driver by ID
-router.get('/:driverId', adminMiddleware , adminsController.getDriverById);
-// Update driver information
-router.put('/:driverId/update', adminMiddleware , adminsController.updateDriver);
-// Delete driver information
-router.delete('/:driverId', adminMiddleware , adminsController.deleteDriver);
-// Get orders completed by a specific driver
-router.get('/:driverId/orders', adminMiddleware , adminsController.getDriverOrders);
-// Block driver
-router.post('/:driverId/block', adminMiddleware , adminsController.blockDriver);
-
-
+router.get('/', authMiddleware, adminMiddleware, adminsController.getAllDrivers);
+router.get('/:driverId', authMiddleware, adminMiddleware, adminsController.getDriverById);
+router.put('/:driverId/update', authMiddleware, adminMiddleware, adminsController.updateDriver);
+router.delete('/:driverId', authMiddleware, adminMiddleware, adminsController.deleteDriver);
+router.get('/:driverId/orders', authMiddleware, adminMiddleware, adminsController.getDriverOrders);
+router.post('/:driverId/block', authMiddleware, adminMiddleware, adminsController.blockDriver);
 
 module.exports = router;

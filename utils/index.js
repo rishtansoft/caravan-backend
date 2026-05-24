@@ -17,8 +17,11 @@ class UtilFunctions {
     }
 
     validateName(firstName) {
-        const regex = /^[^\d][a-zA-Z]{2,}$/;
-        return regex.test(firstName);
+        if (typeof firstName !== 'string') return false;
+        const trimmed = firstName.trim();
+        if (trimmed.length < 2 || trimmed.length > 50) return false;
+        const regex = /^[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳʼ'’\-\s]+$/u;
+        return regex.test(trimmed);
     }
 
     // Tex passport seriya uchun

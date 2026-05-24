@@ -504,7 +504,7 @@ class DriverControllers {
                 { latitude: start_latitude, longitude: start_longitude }
             );
 
-            if (distance >= 150 || !distance) {
+            if (distance === null || distance === undefined || isNaN(distance) || distance >= 150) {
                 return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
             }
 
@@ -716,7 +716,7 @@ class DriverControllers {
                 { latitude: start_latitude, longitude: start_longitude }
             );
 
-            if (distance >= 150 || !distance) {
+            if (distance === null || distance === undefined || isNaN(distance) || distance >= 150) {
                 return res.status(200).json({ message: 'Siz hali manzilga yetib kelmadingiz', success: false });
             }
 

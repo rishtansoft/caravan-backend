@@ -41,7 +41,11 @@ router.post("/resend-code-update-phone", protect, userController.resendVerificat
 router.post('/upload-profile-picture', protect, upload.single('file'), userController.uploadUserProfilePicture);
 
 // Rasmni o'chirish API
-router.post('/delete-avatar',protect, userController.deleteAvatar);
+router.post('/delete-avatar', protect, userController.deleteAvatar);
+router.delete('/delete-profile-image', protect, userController.deleteAvatar);
+
+// Akkauntni o'chirish
+router.delete('/delete-account', protect, userController.deleteAccount);
 
 // Rasmni almashtirish
 router.post('/replace-avatar',protect, upload.single('file'), userController.replaceAvatar);
